@@ -17,31 +17,53 @@ export default function HeroAppleScroll() {
 
     const frameCount = 120; // Total Apple frames configured
 
-    // 1. Preload Images (Parallel Execution for Vercel/CDN Speed)
+    // 1. Progressive Loading / Lazy Sequence (FCP < 1 Detik)
     useEffect(() => {
-        let isMounted = true; // Prevent state updates if unmounted
+        let isMounted = true;
 
-        const loadImages = async () => {
-            const imagePromises = Array.from({ length: frameCount }, (_, i) => {
-                return new Promise<HTMLImageElement>((resolve) => {
-                    const img = new Image();
-                    const formattedIndex = (i + 1).toString().padStart(3, '0');
-                    img.src = `/sequence/ezgif-frame-${formattedIndex}.jpg`;
-                    img.onload = () => resolve(img);
-                    img.onerror = () => resolve(img); // Continue even if one frame fails
-                });
+        const preloadSequence = async () => {
+            // A. MUAT FRAME PERTAMA (BLOCKING SECARA KILAT HANYA UNTUK FRAME 1)
+            const firstImg = new Image();
+            firstImg.src = `/sequence/ezgif-frame-001.jpg`;
+            await new Promise((resolve) => {
+                firstImg.onload = resolve;
+                firstImg.onerror = resolve; // Lanjut meski error
             });
 
-            // Execute all 120 HTTP requests in parallel
-            const loadedImages = await Promise.all(imagePromises);
+            if (!isMounted) return;
 
-            if (isMounted) {
-                setImages(loadedImages);
-                setIsLoaded(true);
+            // Inisialisasi array kosong sepanjang 120 slot dan isi index 0
+            const initialImages = new Array(frameCount);
+            initialImages[0] = firstImg;
+            setImages(initialImages);
+
+            // BEBAS TUGAS: Matikan layar loading SEKARANG JUGA setelah frame 1 siap
+            setIsLoaded(true);
+
+            // B. SISA FRAME DILOAD DIAM-DIAM DI BACKGROUND (NON-BLOCKING)
+            for (let i = 2; i <= frameCount; i++) {
+                if (!isMounted) break;
+
+                const img = new Image();
+                const formattedIndex = i.toString().padStart(3, '0');
+
+                // Gunakan callback onload untuk mengupdate state secara bertahap tanpa memblokir
+                img.onload = () => {
+                    if (isMounted) {
+                        setImages((prev) => {
+                            const newArr = [...prev];
+                            newArr[i - 1] = img;
+                            return newArr;
+                        });
+                    }
+                };
+
+                // Trigger fetch dari server
+                img.src = `/sequence/ezgif-frame-${formattedIndex}.jpg`;
             }
         };
 
-        loadImages();
+        preloadSequence();
         return () => { isMounted = false; };
     }, []);
 
@@ -88,7 +110,7 @@ export default function HeroAppleScroll() {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
-    // 3. Render Canvas dynamically synced to currentFrameIndex
+    // 3. Render Canvas dynamically synced to currentFrameIndex (Dengan Placeholder Aman)
     useEffect(() => {
         if (!isLoaded || images.length === 0) return;
 
@@ -98,17 +120,31 @@ export default function HeroAppleScroll() {
         const context = canvas.getContext('2d');
         if (!context) return;
 
-        const img = images[currentFrameIndex];
-        if (img) {
+        // PROGRESSIVE RENDER SAFEGUARD: Cari gambar target saat ini
+        let targetImg = images[currentFrameIndex];
+
+        // JIKA gambar target BELUM ada atau BELUM selesai didownload (complete),
+        // telusuri mundur ke belakang untuk mencari gambar terakhir yang SUDAH lengkap.
+        // Dengan ini kanvas TIDAK AKAN KOSONG/BLANK meskipun scroll mendahului download.
+        if (!targetImg || !targetImg.complete) {
+            for (let i = currentFrameIndex - 1; i >= 0; i--) {
+                if (images[i] && images[i].complete) {
+                    targetImg = images[i];
+                    break;
+                }
+            }
+        }
+
+        // Render Frame yang paling stabil
+        if (targetImg && targetImg.complete) {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
 
-            const scale = Math.max(canvas.width / img.width, canvas.height / img.height);
-            const x = (canvas.width / 2) - (img.width / 2) * scale;
-            const y = (canvas.height / 2) - (img.height / 2) * scale;
+            const scale = Math.max(canvas.width / targetImg.width, canvas.height / targetImg.height);
+            const x = (canvas.width / 2) - (targetImg.width / 2) * scale;
+            const y = (canvas.height / 2) - (targetImg.height / 2) * scale;
 
-            // Render mapped frame to canvas
-            context.drawImage(img, x, y, img.width * scale, img.height * scale);
+            context.drawImage(targetImg, x, y, targetImg.width * scale, targetImg.height * scale);
         }
     }, [isLoaded, currentFrameIndex, images]);
 
