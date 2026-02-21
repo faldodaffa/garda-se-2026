@@ -5,6 +5,7 @@ import { SiteConfigProvider } from "@/context/SiteConfigContext";
 import Navbar from "@/components/dashboard/Navbar";
 import FloatingChatbot from "@/components/dashboard/FloatingChatbot";
 import Footer from "@/components/dashboard/Footer";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
@@ -31,6 +32,7 @@ export default function RootLayout({
             <FloatingChatbot />
           </div>
         </SiteConfigProvider>
+        <SpeedInsights />
       </body>
     </html>
   );
