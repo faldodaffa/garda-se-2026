@@ -90,8 +90,6 @@ const filters = [
 ];
 
 export default function BentoGrid() {
-    const router = useRouter();
-
     // Fungsi pintar memastikan URL Internal tidak hancur dan Eksternal aman
     const formatExternalUrl = (url: string | undefined) => {
         if (!url || url === '#' || url === '') return '#';
@@ -99,22 +97,6 @@ export default function BentoGrid() {
         if (url.startsWith('mailto:') || url.startsWith('tel:')) return url;
         if (/^https?:\/\//i.test(url)) return url;
         return `https://${url}`;
-    };
-
-    // Solusi Radikal: Imperative Navigation Anti-Bug iOS Safari
-    const handleNavigation = (e: React.MouseEvent, url: string | undefined) => {
-        e.preventDefault();
-        const formattedUrl = formatExternalUrl(url);
-        if (formattedUrl === '#') return;
-
-        const isExternal = formattedUrl.startsWith('http') || formattedUrl.startsWith('mailto') || formattedUrl.startsWith('tel');
-
-        if (isExternal) {
-            window.open(formattedUrl, '_blank', 'noopener,noreferrer');
-        } else {
-            // Internal routes fire seamlessly using Next.js SPA router
-            router.push(formattedUrl);
-        }
     };
 
     const [activeFilter, setActiveFilter] = useState('all');
@@ -282,52 +264,72 @@ export default function BentoGrid() {
                         </h2>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                            {category.items.map((item, index) => (
-                                <div
-                                    key={index}
-                                    onClick={(e) => handleNavigation(e, item.href)}
-                                    role="button"
-                                    tabIndex={0}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter' || e.key === ' ') {
-                                            handleNavigation(e as any, item.href);
-                                        }
-                                    }}
-                                    className={cn(
-                                        "block cursor-pointer group relative overflow-hidden rounded-[2.5rem] p-8 transition-all duration-500",
-                                        "bg-white/70 backdrop-blur-2xl ring-1 ring-slate-100",
-                                        "shadow-[0_8px_30px_rgb(0,0,0,0.04)] active:scale-[0.98]",
-                                        "md:hover:shadow-[0_20px_40px_rgba(247,144,57,0.08)] md:hover:-translate-y-1 md:hover:bg-white/90",
-                                        item.className
-                                    )}
-                                >
-                                    <div className="flex flex-col h-full justify-between space-y-6">
-                                        <div className="flex justify-between items-start">
-                                            <div className={cn(
-                                                "p-4 rounded-2xl transition-transform duration-500 md:group-hover:scale-110 md:group-hover:rotate-3",
-                                                "bg-gradient-to-br from-white to-white/50 shadow-sm border border-white/60"
-                                            )}>
-                                                <item.icon className="w-8 h-8 text-gray-700 md:group-hover:text-se-jingga transition-colors duration-300" />
+                            {category.items.map((item, index) => {
+                                const formattedUrl = formatExternalUrl(item.href);
+                                const isExternal = formattedUrl.startsWith('http') || formattedUrl.startsWith('mailto') || formattedUrl.startsWith('tel');
+
+                                const cardClasses = cn(
+                                    "block cursor-pointer group relative overflow-hidden rounded-[2.5rem] p-8 transition-all duration-500",
+                                    "bg-white/70 backdrop-blur-2xl ring-1 ring-slate-100",
+                                    "shadow-[0_8px_30px_rgb(0,0,0,0.04)] active:scale-[0.98]",
+                                    "md:hover:shadow-[0_20px_40px_rgba(247,144,57,0.08)] md:hover:-translate-y-1 md:hover:bg-white/90",
+                                    item.className
+                                );
+
+                                const CardInner = (
+                                    <>
+                                        <div className="flex flex-col h-full justify-between space-y-6">
+                                            <div className="flex justify-between items-start">
+                                                <div className={cn(
+                                                    "p-4 rounded-2xl transition-transform duration-500 md:group-hover:scale-110 md:group-hover:rotate-3",
+                                                    "bg-gradient-to-br from-white to-white/50 shadow-sm border border-white/60"
+                                                )}>
+                                                    <item.icon className="w-8 h-8 text-gray-700 md:group-hover:text-se-jingga transition-colors duration-300" />
+                                                </div>
+                                                {item.badge && (
+                                                    <span className="px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-white bg-red-500 rounded-full shadow-lg shadow-red-500/30 animate-pulse">
+                                                        {item.badge}
+                                                    </span>
+                                                )}
                                             </div>
-                                            {item.badge && (
-                                                <span className="px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-white bg-red-500 rounded-full shadow-lg shadow-red-500/30 animate-pulse">
-                                                    {item.badge}
-                                                </span>
-                                            )}
+
+                                            <div>
+                                                <h3 className="text-xl font-extrabold text-gray-900 mb-2 leading-tight tracking-tight md:group-hover:text-se-jingga transition-colors">{item.title}</h3>
+                                                <p className="text-sm font-medium text-gray-500 leading-relaxed max-w-[90%]">
+                                                    {item.description}
+                                                </p>
+                                            </div>
                                         </div>
 
-                                        <div>
-                                            <h3 className="text-xl font-extrabold text-gray-900 mb-2 leading-tight tracking-tight md:group-hover:text-se-jingga transition-colors">{item.title}</h3>
-                                            <p className="text-sm font-medium text-gray-500 leading-relaxed max-w-[90%]">
-                                                {item.description}
-                                            </p>
-                                        </div>
-                                    </div>
+                                        {/* Subtle Glow Effect */}
+                                        <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/0 to-white/40 opacity-0 md:group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+                                    </>
+                                );
 
-                                    {/* Subtle Glow Effect */}
-                                    <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/0 to-white/40 opacity-0 md:group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-                                </div>
-                            ))}
+                                if (isExternal) {
+                                    return (
+                                        <a
+                                            key={index}
+                                            href={formattedUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className={cardClasses}
+                                        >
+                                            {CardInner}
+                                        </a>
+                                    );
+                                }
+
+                                return (
+                                    <Link
+                                        key={index}
+                                        href={formattedUrl}
+                                        className={cardClasses}
+                                    >
+                                        {CardInner}
+                                    </Link>
+                                );
+                            })}
                         </div>
                     </motion.div>
                 ))}
