@@ -166,7 +166,7 @@ export default function MediaCenter() {
 
             {/* ROW 2: YOUTUBE SECTION */}
             <div className="w-full mt-12 relative group">
-                <div className="absolute top-6 left-6 z-10 flex items-center space-x-2 bg-red-600 text-white px-4 py-1.5 rounded-full font-bold text-sm shadow-lg pointer-events-none">
+                <div className="hidden md:flex absolute top-6 left-6 z-10 items-center space-x-2 bg-red-600 text-white px-4 py-1.5 rounded-full font-bold text-sm shadow-lg pointer-events-none">
                     <Play className="w-4 h-4 fill-current" />
                     <span>Official Youtube</span>
                 </div>

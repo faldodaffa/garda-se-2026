@@ -10,21 +10,21 @@ export default function Footer() {
             <div className="container mx-auto px-6">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center cursor-default">
                     {/* Left: 3 Logos */}
-                    <div className="lg:col-span-7 flex justify-center lg:justify-start gap-4 sm:gap-6 flex-nowrap items-center">
+                    <div className="lg:col-span-7 flex flex-wrap justify-center lg:justify-start gap-6 sm:gap-8 items-center w-full">
                         <img
                             src="/images/logo-footer-1.png"
                             alt="Logo Footer 1"
-                            className="h-10 sm:h-12 md:h-14 w-auto object-contain drop-shadow-sm hover:scale-105 transition-transform duration-300"
+                            className="h-12 sm:h-14 lg:h-16 w-auto object-contain drop-shadow-sm hover:scale-105 transition-transform duration-300"
                         />
                         <img
                             src="/images/logo-footer-2.png"
                             alt="Logo Footer 2"
-                            className="h-10 sm:h-12 md:h-14 w-auto object-contain drop-shadow-sm hover:scale-105 transition-transform duration-300"
+                            className="h-10 sm:h-12 lg:h-14 w-auto object-contain drop-shadow-sm hover:scale-105 transition-transform duration-300"
                         />
                         <img
                             src="/images/logo-footer-3.png"
                             alt="Logo Footer 3"
-                            className="h-10 sm:h-12 md:h-14 w-auto object-contain drop-shadow-sm hover:scale-105 transition-transform duration-300"
+                            className="h-10 sm:h-12 lg:h-14 w-auto object-contain drop-shadow-sm hover:scale-105 transition-transform duration-300"
                         />
                     </div>
 
