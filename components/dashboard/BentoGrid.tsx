@@ -8,6 +8,7 @@ import {
     Image, Video, Share2, Shirt, ImageIcon, LucideIcon, Sparkles
 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -89,15 +90,31 @@ const filters = [
 ];
 
 export default function BentoGrid() {
-    // Fungsi pintar memastikan URL selalu menjadi Absolute (punya https://)
+    const router = useRouter();
+
+    // Fungsi pintar memastikan URL Internal tidak hancur dan Eksternal aman
     const formatExternalUrl = (url: string | undefined) => {
         if (!url || url === '#' || url === '') return '#';
-        // Jika sudah ada http:// atau https://, biarkan saja
-        if (/^https?:\/\//i.test(url)) {
-            return url;
-        }
-        // Jika belum ada, tambahkan secara otomatis
+        if (url.startsWith('/')) return url; // Internal Next.js Route
+        if (url.startsWith('mailto:') || url.startsWith('tel:')) return url;
+        if (/^https?:\/\//i.test(url)) return url;
         return `https://${url}`;
+    };
+
+    // Solusi Radikal: Imperative Navigation Anti-Bug iOS Safari
+    const handleNavigation = (e: React.MouseEvent, url: string | undefined) => {
+        e.preventDefault();
+        const formattedUrl = formatExternalUrl(url);
+        if (formattedUrl === '#') return;
+
+        const isExternal = formattedUrl.startsWith('http') || formattedUrl.startsWith('mailto') || formattedUrl.startsWith('tel');
+
+        if (isExternal) {
+            window.open(formattedUrl, '_blank', 'noopener,noreferrer');
+        } else {
+            // Internal routes fire seamlessly using Next.js SPA router
+            router.push(formattedUrl);
+        }
     };
 
     const [activeFilter, setActiveFilter] = useState('all');
@@ -266,11 +283,16 @@ export default function BentoGrid() {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                             {category.items.map((item, index) => (
-                                <a
-                                    href={formatExternalUrl(item.href)}
+                                <div
                                     key={index}
-                                    target={item.href && item.href !== '#' ? "_blank" : "_self"}
-                                    rel="noopener noreferrer"
+                                    onClick={(e) => handleNavigation(e, item.href)}
+                                    role="button"
+                                    tabIndex={0}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' || e.key === ' ') {
+                                            handleNavigation(e as any, item.href);
+                                        }
+                                    }}
                                     className={cn(
                                         "block cursor-pointer group relative overflow-hidden rounded-[2.5rem] p-8 transition-all duration-500",
                                         "bg-white/70 backdrop-blur-2xl ring-1 ring-slate-100",
@@ -304,7 +326,7 @@ export default function BentoGrid() {
 
                                     {/* Subtle Glow Effect */}
                                     <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/0 to-white/40 opacity-0 md:group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-                                </a>
+                                </div>
                             ))}
                         </div>
                     </motion.div>
