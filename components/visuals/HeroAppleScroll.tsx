@@ -17,28 +17,32 @@ export default function HeroAppleScroll() {
 
     const frameCount = 120; // Total Apple frames configured
 
-    // 1. Preload Images
+    // 1. Preload Images (Parallel Execution for Vercel/CDN Speed)
     useEffect(() => {
+        let isMounted = true; // Prevent state updates if unmounted
+
         const loadImages = async () => {
-            const loadedImages: HTMLImageElement[] = [];
-
-            for (let i = 1; i <= frameCount; i++) {
-                const img = new Image();
-                const formattedIndex = i.toString().padStart(3, '0');
-                img.src = `/sequence/ezgif-frame-${formattedIndex}.jpg`;
-                await new Promise((resolve) => {
-                    img.onload = resolve;
-                    // Handle error just in case, to not block the loop
-                    img.onerror = resolve;
+            const imagePromises = Array.from({ length: frameCount }, (_, i) => {
+                return new Promise<HTMLImageElement>((resolve) => {
+                    const img = new Image();
+                    const formattedIndex = (i + 1).toString().padStart(3, '0');
+                    img.src = `/sequence/ezgif-frame-${formattedIndex}.jpg`;
+                    img.onload = () => resolve(img);
+                    img.onerror = () => resolve(img); // Continue even if one frame fails
                 });
-                loadedImages.push(img);
-            }
+            });
 
-            setImages(loadedImages);
-            setIsLoaded(true);
+            // Execute all 120 HTTP requests in parallel
+            const loadedImages = await Promise.all(imagePromises);
+
+            if (isMounted) {
+                setImages(loadedImages);
+                setIsLoaded(true);
+            }
         };
 
         loadImages();
+        return () => { isMounted = false; };
     }, []);
 
     // 2. Mathematical Scroll Fraction & Parallax
@@ -109,25 +113,37 @@ export default function HeroAppleScroll() {
     }, [isLoaded, currentFrameIndex, images]);
 
     return (
-        <div ref={containerRef} className="relative w-full h-[500vh] bg-slate-50 overflow-clip">
+        <div ref={containerRef} className="relative w-full h-[500vh] bg-[#fdfaf5] overflow-clip">
             <div className="sticky top-0 h-screen w-full overflow-hidden flex flex-col items-center justify-center">
 
-                {!isLoaded && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-gray-50 z-50">
-                        <div className="animate-pulse flex flex-col items-center">
-                            <div className="w-12 h-12 border-4 border-[#f79039] border-t-transparent rounded-full animate-spin mb-4"></div>
-                            <p className="text-gray-400 font-mono text-sm">Loading visual experience...</p>
-                        </div>
-                    </div>
-                )}
+                {/* Static Background Fallback (Instantly visible while the 120-frame canvas loads in parallel) */}
+                <div
+                    className="absolute inset-0 w-full h-full bg-cover bg-center transition-opacity duration-1000"
+                    style={{
+                        backgroundImage: `url('/sequence/ezgif-frame-001.jpg')`,
+                        opacity: isLoaded ? 0 : 1 // Fade out cleanly when canvas takes over
+                    }}
+                />
 
                 {/* Canvas Animasi (Berjalan dari frame 1 penuh) */}
-                <canvas ref={canvasRef} className="absolute inset-0 w-full h-full object-cover object-center" />
+                <canvas
+                    ref={canvasRef}
+                    className="absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-1000"
+                    style={{ opacity: isLoaded ? 1 : 0 }}
+                />
+
+                {/* Subdued Loading Indicator Overlay (Non-blocking) */}
+                {!isLoaded && (
+                    <div className="absolute top-8 right-8 flex items-center gap-3 bg-white/60 backdrop-blur-md px-4 py-2 rounded-full border border-white/50 shadow-sm z-50">
+                        <div className="w-4 h-4 border-2 border-[#f79039] border-t-transparent rounded-full animate-spin"></div>
+                        <span className="text-[#f79039] text-xs font-bold tracking-widest uppercase">Memuat Visual...</span>
+                    </div>
+                )}
 
                 {/* Overlay Gelap Tipis agar Canvas tidak terlalu menyilaukan */}
                 <div className="absolute inset-0 bg-black/10 pointer-events-none" />
 
-                {/* Pembungkus Absolut Teks */}
+                {/* Pembungkus Absolut Teks (NO UI BLOCKING - RENDERS INSTANTLY) */}
                 <div
                     className="absolute bottom-4 md:bottom-8 left-0 w-full flex justify-center px-4 md:px-8 z-10"
                     style={{
