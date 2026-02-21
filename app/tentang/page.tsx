@@ -131,6 +131,20 @@ export default function AboutPage() {
                     <HelpdeskForm />
                 </motion.div>
 
+                {/* Developer Credits Section */}
+                <div className="mt-16 pt-8 border-t border-gray-200/50 flex flex-col items-center justify-center text-center">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-50 border border-slate-100 shadow-sm mb-3">
+                        <span className="flex h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
+                        <p className="text-xs font-semibold text-slate-600 tracking-wide">SYSTEM ARCHITECTS</p>
+                    </div>
+                    <p className="text-sm md:text-base text-slate-700 font-medium">
+                        UI/UX & Lead Frontend: <a href="https://github.com/faldodaffa" target="_blank" className="text-[#f79039] hover:underline font-bold">@faldodaffa</a>
+                    </p>
+                    <p className="text-xs md:text-sm text-slate-500 mt-1">
+                        Assisted by: <span className="font-semibold text-slate-600">Google Gemini</span> & <span className="font-semibold text-slate-600">Google Anti Gravity</span>
+                    </p>
+                </div>
+
             </div>
         </main>
     );

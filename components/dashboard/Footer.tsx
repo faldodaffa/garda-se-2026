@@ -1,10 +1,27 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Mail, Phone, MapPin, Lock } from 'lucide-react';
 import Link from 'next/link';
 
 export default function Footer() {
+    useEffect(() => {
+        // Easter Egg hanya dijalankan sekali di client-side
+        console.log(
+            "%c🚀 Portal Garda SE2026",
+            "font-size: 24px; font-weight: 900; color: #f79039; text-shadow: 2px 2px 0px #231F20;"
+        );
+        console.log(
+            "%cArchitected & Developed by: @faldodaffa",
+            "font-size: 14px; font-weight: bold; color: #10B981;"
+        );
+        console.log(
+            "%cAI Pair Programmers: Google Gemini & Google Anti Gravity",
+            "font-size: 12px; font-style: italic; color: #64748B;"
+        );
+        console.log("--------------------------------------------------");
+    }, []);
+
     return (
         <footer className="bg-[#231F20] text-gray-300 py-12 border-t border-gray-800">
             <div className="container mx-auto px-6">
