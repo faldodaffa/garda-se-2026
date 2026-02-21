@@ -230,10 +230,10 @@ export default function BentoGrid() {
                                     target={item.href && item.href !== '#' ? "_blank" : "_self"}
                                     rel="noopener noreferrer"
                                     className={cn(
-                                        "group relative overflow-hidden rounded-[2.5rem] p-8 transition-all duration-500",
+                                        "block cursor-pointer group relative overflow-hidden rounded-[2.5rem] p-8 transition-all duration-500",
                                         "bg-white/70 backdrop-blur-2xl ring-1 ring-slate-100",
-                                        "shadow-[0_8px_30px_rgb(0,0,0,0.04)]",
-                                        "hover:shadow-[0_20px_40px_rgba(247,144,57,0.08)] hover:-translate-y-1 hover:bg-white/90",
+                                        "shadow-[0_8px_30px_rgb(0,0,0,0.04)] active:scale-[0.98]",
+                                        "md:hover:shadow-[0_20px_40px_rgba(247,144,57,0.08)] md:hover:-translate-y-1 md:hover:bg-white/90",
                                         item.className
                                     )}
                                 >
