@@ -5,7 +5,7 @@ import {
     BookOpen, Users, FileText, Megaphone,
     BarChart3, Settings, Calendar,
     FileBarChart, Building2, MapPin, Search,
-    Image, Video, Share2, Shirt, ImageIcon, LucideIcon
+    Image, Video, Share2, Shirt, ImageIcon, LucideIcon, Sparkles
 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -63,6 +63,14 @@ const categories: Category[] = [
         id: 'publisitas',
         title: '3. Publisitas & Media',
         items: [
+            {
+                title: "PACE AI Generator",
+                icon: Sparkles,
+                href: "https://s.bps.go.id/pacegenerator",
+                description: "Asisten cerdas pembuat visual maskot & atribut SE2026.",
+                className: "md:hover:bg-gradient-to-br md:hover:from-white md:hover:to-orange-50 ring-1 ring-orange-200/50 shadow-orange-100/20",
+                badge: "AI Tool"
+            },
             { title: "Strategi & Branding", icon: Megaphone, href: "/publisitas/strategi", className: "md:col-span-2", description: "Strategi, Theme Song & Logo" },
             { title: "Desain Medsos & Video", icon: ImageIcon, href: "/publisitas/desain", description: "Konten Instagram/YouTube" },
             { title: "Merch & Ekraf", icon: Shirt, href: "/publisitas/merch", description: "Seragam & Souvenir" },
@@ -134,7 +142,16 @@ export default function BentoGrid() {
                         // Build mapping categories
                         let administrasiItems: GridItem[] = [];
                         let persiapanItems: GridItem[] = [];
-                        let publisitasItems: GridItem[] = [];
+                        let publisitasItems: GridItem[] = [
+                            {
+                                title: "PACE AI Generator",
+                                description: "Asisten cerdas pembuat visual maskot & atribut SE2026.",
+                                icon: Sparkles,
+                                href: "https://s.bps.go.id/pacegenerator",
+                                badge: "AI Tool",
+                                className: "md:hover:bg-gradient-to-br md:hover:from-white md:hover:to-orange-50 ring-1 ring-orange-200/50 shadow-orange-100/20"
+                            }
+                        ];
 
                         parsedBentoLinks.forEach((link: any) => {
                             // Resolve correct lucide icon heuristic based on category
@@ -240,10 +257,10 @@ export default function BentoGrid() {
                                     <div className="flex flex-col h-full justify-between space-y-6">
                                         <div className="flex justify-between items-start">
                                             <div className={cn(
-                                                "p-4 rounded-2xl transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3",
+                                                "p-4 rounded-2xl transition-transform duration-500 md:group-hover:scale-110 md:group-hover:rotate-3",
                                                 "bg-gradient-to-br from-white to-white/50 shadow-sm border border-white/60"
                                             )}>
-                                                <item.icon className="w-8 h-8 text-gray-700 group-hover:text-se-jingga transition-colors duration-300" />
+                                                <item.icon className="w-8 h-8 text-gray-700 md:group-hover:text-se-jingga transition-colors duration-300" />
                                             </div>
                                             {item.badge && (
                                                 <span className="px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-white bg-red-500 rounded-full shadow-lg shadow-red-500/30 animate-pulse">
@@ -253,7 +270,7 @@ export default function BentoGrid() {
                                         </div>
 
                                         <div>
-                                            <h3 className="text-xl font-extrabold text-gray-900 mb-2 leading-tight tracking-tight group-hover:text-se-jingga transition-colors">{item.title}</h3>
+                                            <h3 className="text-xl font-extrabold text-gray-900 mb-2 leading-tight tracking-tight md:group-hover:text-se-jingga transition-colors">{item.title}</h3>
                                             <p className="text-sm font-medium text-gray-500 leading-relaxed max-w-[90%]">
                                                 {item.description}
                                             </p>
@@ -261,7 +278,7 @@ export default function BentoGrid() {
                                     </div>
 
                                     {/* Subtle Glow Effect */}
-                                    <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/0 to-white/40 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+                                    <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/0 to-white/40 opacity-0 md:group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
                                 </a>
                             ))}
                         </div>
