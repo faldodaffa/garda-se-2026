@@ -1,0 +1,50 @@
+"use client";
+
+import React from 'react';
+import { Mail, Phone, MapPin, Lock } from 'lucide-react';
+import Link from 'next/link';
+
+export default function Footer() {
+    return (
+        <footer className="bg-[#231F20] text-gray-300 py-12 border-t border-gray-800">
+            <div className="container mx-auto px-6">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center cursor-default">
+                    {/* Left: 3 Logos */}
+                    <div className="lg:col-span-7 flex justify-center lg:justify-start gap-4 sm:gap-6 flex-nowrap items-center">
+                        <img
+                            src="/images/logo-footer-1.png"
+                            alt="Logo Footer 1"
+                            className="h-10 sm:h-12 md:h-14 w-auto object-contain drop-shadow-sm hover:scale-105 transition-transform duration-300"
+                        />
+                        <img
+                            src="/images/logo-footer-2.png"
+                            alt="Logo Footer 2"
+                            className="h-10 sm:h-12 md:h-14 w-auto object-contain drop-shadow-sm hover:scale-105 transition-transform duration-300"
+                        />
+                        <img
+                            src="/images/logo-footer-3.png"
+                            alt="Logo Footer 3"
+                            className="h-10 sm:h-12 md:h-14 w-auto object-contain drop-shadow-sm hover:scale-105 transition-transform duration-300"
+                        />
+                    </div>
+
+                    {/* Right: Official Address Exact Text */}
+                    <div className="lg:col-span-5 text-sm text-gray-300 md:text-left text-center flex flex-col items-center md:items-start space-y-1">
+                        <p className="font-bold">Badan Pusat Statistik Provinsi Papua</p>
+                        <p>(BPS-Statistics of Papua Province)</p>
+                        <p>Jl. Dr. Sam Ratulangi Dok II Jayapura 99112</p>
+                        <p>Telp. (0967) 5165 999; 5165 107</p>
+                        <p>Hp : 0821 24 535 535 | Email : se.9400@bps.go.id</p>
+                    </div>
+                </div>
+
+                <div className="mt-12 pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center text-xs text-gray-600">
+                    <p>&copy; 2026 BPS Provinsi Papua. All rights reserved.</p>
+                    <Link href="/admin/login" className="mt-4 md:mt-0 flex items-center text-gray-400 hover:text-se-jingga transition-colors">
+                        <Lock className="w-3 h-3 mr-1" /> Admin Login
+                    </Link>
+                </div>
+            </div>
+        </footer>
+    );
+}

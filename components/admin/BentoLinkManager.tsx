@@ -1,0 +1,277 @@
+"use client";
+
+import React, { useState, useEffect } from 'react';
+import { UploadCloud, Link as LinkIcon, Download, Search, Info, Edit2, Check, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+// Standard Bento Data Model
+interface BentoLink {
+    id: string | number;
+    kategori: string;
+    nama: string;
+    deskripsi: string;
+    label: string;
+    url: string;
+}
+
+const defaultBentoData: BentoLink[] = [
+    // 1. Administrasi SE2026
+    { id: 1, kategori: 'Administrasi SE2026', nama: 'Buku Pedoman SE2026', deskripsi: 'Buku 1 - Buku 6 (Pedoman Lengkap)', label: 'PENTING', url: '#' },
+    { id: 2, kategori: 'Administrasi SE2026', nama: 'SK Tim Pelaksana', deskripsi: 'Surat Keputusan Tim', label: '', url: '#' },
+    { id: 3, kategori: 'Administrasi SE2026', nama: 'SK Tim GARDA', deskripsi: 'Tim Penjamin Kualitas', label: '', url: '#' },
+    { id: 4, kategori: 'Administrasi SE2026', nama: 'Surat-menyurat', deskripsi: 'Arsip Persuratan', label: '', url: '#' },
+    { id: 5, kategori: 'Administrasi SE2026', nama: 'Administrasi Rapat', deskripsi: 'Notulensi & Daftar Hadir', label: '', url: '#' },
+    { id: 6, kategori: 'Administrasi SE2026', nama: 'Laporan Kegiatan', deskripsi: 'Laporan Bulanan & Triwulanan', label: '', url: '#' },
+
+    // 2. Informasi & Persiapan SE2026
+    { id: 7, kategori: 'Informasi & Persiapan SE2026', nama: 'Gambaran Umum & KBLI 2025', deskripsi: 'Konsep Definisi & Klasifikasi', label: '', url: '#' },
+    { id: 8, kategori: 'Informasi & Persiapan SE2026', nama: 'SBR & Profiling Mandiri', deskripsi: 'Statistical Business Register', label: '', url: '#' },
+    { id: 9, kategori: 'Informasi & Persiapan SE2026', nama: 'Pemutakhiran Wilkerstat', deskripsi: 'Peta Blok Sensus', label: '', url: '#' },
+    { id: 10, kategori: 'Informasi & Persiapan SE2026', nama: 'Identifikasi KBLI Dominan', deskripsi: 'Analisis Potensi Wilayah', label: '', url: '#' },
+    { id: 11, kategori: 'Informasi & Persiapan SE2026', nama: 'Briefing Sub-SLS & Rapat RI', deskripsi: 'Koordinasi Wilayah', label: '', url: '#' },
+    { id: 12, kategori: 'Informasi & Persiapan SE2026', nama: 'Contoh Narasi Usaha', deskripsi: 'Panduan Deskripsi Usaha', label: '', url: '#' },
+
+    // 3. Publisitas & Media
+    { id: 13, kategori: 'Publisitas & Media', nama: 'Strategi & Branding', deskripsi: 'Strategi, Theme Song & Logo', label: '', url: '#' },
+    { id: 14, kategori: 'Publisitas & Media', nama: 'Desain Medsos & Video', deskripsi: 'Konten Instagram/YouTube', label: '', url: '#' },
+    { id: 15, kategori: 'Publisitas & Media', nama: 'Merch & Ekraf', deskripsi: 'Seragam & Souvenir', label: '', url: '#' },
+    { id: 16, kategori: 'Publisitas & Media', nama: 'Rekap Konten & Sosialisasi', deskripsi: 'Laporan Publisitas', label: '', url: '#' },
+    { id: 17, kategori: 'Publisitas & Media', nama: 'Outdoor Advertising', deskripsi: 'Spanduk, Baliho, Videotron', label: '', url: '#' },
+    { id: 18, kategori: 'Publisitas & Media', nama: 'Dukungan Eksternal', deskripsi: 'Dukungan Pemda/Dinas', label: '', url: '#' },
+];
+
+export default function BentoLinkManager() {
+    const [bentoLinks, setBentoLinks] = useState<BentoLink[]>(defaultBentoData);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [isLoaded, setIsLoaded] = useState(false);
+
+    // 1. DATA LOADER ON MOUNT
+    useEffect(() => {
+        const savedData = localStorage.getItem('garda_se2026_bento_links');
+        if (savedData) {
+            try {
+                setBentoLinks(JSON.parse(savedData));
+            } catch (e) {
+                console.error("Failed to parse saved BentoLinks", e);
+            }
+        }
+        setIsLoaded(true);
+    }, []);
+
+    // 2. AUTO-SAVE ON CHANGE
+    useEffect(() => {
+        if (isLoaded) {
+            localStorage.setItem('garda_se2026_bento_links', JSON.stringify(bentoLinks));
+        }
+    }, [bentoLinks, isLoaded]);
+
+    // --- State for Inline Editing ---
+    const [editingId, setEditingId] = useState<string | number | null>(null);
+    const [editFormData, setEditFormData] = useState<Partial<BentoLink>>({});
+
+    const handleEditClick = (item: BentoLink) => {
+        setEditingId(item.id);
+        setEditFormData(item);
+    };
+
+    const handleCancelEdit = () => {
+        setEditingId(null);
+        setEditFormData({});
+    };
+
+    const handleSaveEdit = (id: string | number) => {
+        setBentoLinks(bentoLinks.map(item => item.id === id ? { ...item, ...editFormData } as BentoLink : item));
+        setEditingId(null);
+    };
+
+
+    const downloadTemplate = () => {
+        const header = "Kategori,Nama Dokumen,Deskripsi,Label,URL Tujuan\n";
+        const sampleRow = "Administrasi SE2026,Buku Pedoman SE2026,Buku 1 - Buku 6 (Pedoman Lengkap),PENTING,https://drive.google.com/...\n";
+        const blob = new Blob([header + sampleRow], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'template_dokumen_se2026.csv';
+        a.click();
+        window.URL.revokeObjectURL(url);
+    };
+
+    const handleCSVUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const text = event.target?.result as string;
+            if (!text) return;
+
+            const rows = text.split('\n').map(row => row.split(','));
+
+            const newLinks = rows.slice(1).map((row, index) => ({
+                id: Date.now() + index,
+                kategori: row[0]?.trim() || '',
+                nama: row[1]?.trim() || '',
+                deskripsi: row[2]?.trim() || '',
+                label: row[3]?.trim() || '',
+                url: row[4]?.trim() || '#'
+            })).filter(item => item.nama);
+
+            setBentoLinks([...bentoLinks, ...newLinks]);
+            alert(`✅ Berhasil memperbarui ${newLinks.length} dokumen secara serentak dari CSV!`);
+        };
+        reader.readAsText(file);
+
+        e.target.value = '';
+    };
+
+    const filteredLinks = bentoLinks.filter(l => l.nama.toLowerCase().includes(searchTerm.toLowerCase()));
+
+    return (
+        <div className="bg-white rounded-2xl p-4 md:p-8 shadow-sm border border-gray-100 flex flex-col gap-8 h-full">
+            {/* Header & Actions */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div>
+                    <h3 className="text-xl md:text-2xl font-bold flex items-center gap-3 text-gray-900">
+                        <LinkIcon className="text-se-jingga w-6 h-6" />
+                        Kelola Tautan Bento
+                    </h3>
+                    <p className="text-sm text-gray-500 mt-2 max-w-lg">
+                        Manajemen terpusat kotak menu pintar halaman Dokumen. Gunakan Edit baris langsung, atau upload CSV massal.
+                    </p>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-3">
+                    <button
+                        onClick={downloadTemplate}
+                        className="px-5 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors shadow-sm"
+                    >
+                        <Download className="w-4 h-4" /> Template CSV
+                    </button>
+                    <div className="relative">
+                        <input
+                            type="file"
+                            accept=".csv"
+                            onChange={handleCSVUpload}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                            title="Upload CSV Dokumen"
+                        />
+                        <button className="w-full px-5 py-2.5 bg-slate-900 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:bg-se-jingga hover:shadow-lg transition-all shadow-sm">
+                            <UploadCloud className="w-4 h-4 text-orange-400" />
+                            Update Serentak (Upload CSV)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* List Table UI */}
+            <div className="flex-1 flex flex-col gap-4">
+                <div className="relative max-w-md">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                        type="text"
+                        placeholder="Cari nama dokumen..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl bg-gray-50/50 text-sm focus:ring-2 focus:ring-se-jingga outline-none transition-all"
+                    />
+                </div>
+
+                <div className="rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+                    {/* Header Columns: Added "Aksi" column space */}
+                    <div className="bg-gray-50/80 px-4 py-3 border-b border-gray-200 grid grid-cols-12 gap-2 md:gap-4 text-xs font-extrabold text-gray-500 tracking-wider uppercase">
+                        <div className="col-span-3">Nama</div>
+                        <div className="col-span-2 hidden md:block">Kategori</div>
+                        <div className="col-span-3">Deskripsi</div>
+                        <div className="col-span-3">URL Target</div>
+                        <div className="col-span-1 text-center">Aksi</div>
+                    </div>
+
+                    <div className="divide-y divide-gray-100 max-h-[500px] overflow-y-auto custom-scrollbar">
+                        {filteredLinks.length === 0 ? (
+                            <div className="p-8 text-center text-gray-400 flex flex-col items-center">
+                                <Info className="w-8 h-8 mb-2 opacity-20" />
+                                <p>Tidak ada tautan/dokumen ditemukan.</p>
+                            </div>
+                        ) : (
+                            filteredLinks.map((link) => (
+                                <div key={link.id} className="px-4 py-3 grid grid-cols-12 gap-2 md:gap-4 items-center hover:bg-se-jingga/5 transition-colors">
+
+                                    {editingId === link.id ? (
+                                        /* --- EDIT MODE --- */
+                                        <>
+                                            <div className="col-span-3 flex flex-col gap-1">
+                                                <input type="text" className="w-full border border-gray-300 rounded-md px-2 py-1.5 text-xs text-gray-800 focus:ring-se-jingga focus:border-se-jingga outline-none"
+                                                    value={editFormData.nama || ''} onChange={(e) => setEditFormData({ ...editFormData, nama: e.target.value })} placeholder="Nama" />
+                                                <input type="text" className="w-full border border-gray-300 rounded-md px-2 py-1 text-[10px] text-gray-500 font-bold placeholder-red-300 uppercase focus:ring-se-jingga outline-none"
+                                                    value={editFormData.label || ''} onChange={(e) => setEditFormData({ ...editFormData, label: e.target.value })} placeholder="Label (Opsi)" />
+                                            </div>
+                                            <div className="col-span-2 hidden md:block">
+                                                <input type="text" className="w-full border border-gray-300 rounded-md px-2 py-1.5 text-xs text-gray-800 focus:ring-se-jingga outline-none"
+                                                    value={editFormData.kategori || ''} onChange={(e) => setEditFormData({ ...editFormData, kategori: e.target.value })} placeholder="Kategori" />
+                                            </div>
+                                            <div className="col-span-3">
+                                                <textarea className="w-full border border-gray-300 rounded-md px-2 py-1 text-xs text-gray-800 focus:ring-se-jingga outline-none min-h-[50px] resize-none"
+                                                    value={editFormData.deskripsi || ''} onChange={(e) => setEditFormData({ ...editFormData, deskripsi: e.target.value })} placeholder="Deskripsi Singkat" />
+                                            </div>
+                                            <div className="col-span-3">
+                                                <input type="text" className="w-full border border-orange-300 bg-orange-50 rounded-md px-2 py-1.5 text-xs text-blue-600 focus:ring-se-jingga focus:border-se-jingga outline-none"
+                                                    value={editFormData.url || ''} onChange={(e) => setEditFormData({ ...editFormData, url: e.target.value })} placeholder="https://..." />
+                                            </div>
+                                            <div className="col-span-1 flex gap-1 justify-center items-start">
+                                                <button onClick={() => handleSaveEdit(link.id)} className="p-1.5 bg-green-100 text-green-700 rounded-md hover:bg-green-200" title="Simpan">
+                                                    <Check className="w-4 h-4" />
+                                                </button>
+                                                <button onClick={handleCancelEdit} className="p-1.5 bg-red-100 text-red-700 rounded-md hover:bg-red-200" title="Batal">
+                                                    <X className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        /* --- READ MODE --- */
+                                        <>
+                                            <div className="col-span-3 font-bold text-gray-800 text-sm pr-2">
+                                                {link.nama}
+                                                {link.label && (
+                                                    <span className="mt-1 block w-fit px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-700 whitespace-nowrap">
+                                                        {link.label}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div className="col-span-2 hidden md:block">
+                                                <span className="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-semibold bg-gray-100 text-gray-600 truncate max-w-full">
+                                                    {link.kategori}
+                                                </span>
+                                            </div>
+                                            <div className="col-span-3 text-xs text-gray-500 line-clamp-2">
+                                                {link.deskripsi}
+                                            </div>
+                                            <div className="col-span-3 text-[11px] font-mono text-gray-400 truncate">
+                                                <a href={link.url} target="_blank" rel="noopener noreferrer" className="hover:text-se-jingga underline decoration-transparent hover:decoration-se-jingga transition-all">
+                                                    {link.url}
+                                                </a>
+                                            </div>
+                                            <div className="col-span-1 flex justify-center pb-2">
+                                                <button
+                                                    onClick={() => handleEditClick(link)}
+                                                    className="p-1.5 w-8 h-8 flex items-center justify-center bg-slate-50 text-slate-500 border border-slate-200 rounded-lg hover:bg-se-jingga hover:text-white hover:border-se-jingga transition-all shadow-sm"
+                                                    title="Edit Baris Ini"
+                                                >
+                                                    <Edit2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            ))
+                        )}
+                    </div>
+                    <div className="bg-gray-50 px-4 py-3 border-t border-gray-200 text-xs text-gray-500 font-medium flex justify-between">
+                        <span>Menampilkan {filteredLinks.length} dokumen.</span>
+                        <span className="text-gray-400">Pilih baris untuk mengedit info secara spesifik.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
