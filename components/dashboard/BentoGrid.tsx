@@ -101,6 +101,7 @@ export default function BentoGrid() {
     };
 
     const [activeFilter, setActiveFilter] = useState('all');
+    const [searchQuery, setSearchQuery] = useState('');
     const [dynamicCategories, setDynamicCategories] = useState<Category[]>(categories);
 
     React.useEffect(() => {
@@ -198,22 +199,46 @@ export default function BentoGrid() {
         }
     }, []);
 
-    const filteredCategories = activeFilter === 'all'
+    const filteredCategories = (activeFilter === 'all'
         ? dynamicCategories
-        : dynamicCategories.filter(c => c.id === activeFilter);
+        : dynamicCategories.filter(c => c.id === activeFilter)
+    ).map(category => ({
+        ...category,
+        items: category.items.filter(item =>
+            item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (item.badge && item.badge.toLowerCase().includes(searchQuery.toLowerCase()))
+        )
+    })).filter(category => category.items.length > 0);
 
     return (
         <div className="py-10 space-y-12">
 
-            {/* Quick Filters - Pill Buttons */}
-            <div className="w-full mb-8 relative">
-                <div className="flex items-center gap-2 md:gap-4 overflow-x-auto whitespace-nowrap pb-4 pt-1 w-full snap-x custom-scrollbar px-4 md:px-0 md:justify-center">
+            {/* Global Search and Filters */}
+            <div className="w-full mb-8 flex flex-col md:flex-row items-center justify-between gap-6 relative px-4 md:px-0">
+
+                {/* Search Bar */}
+                <div className="w-full md:max-w-md relative order-2 md:order-1">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <Search className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Cari menu, dokumen, atau kategori..."
+                        className="w-full pl-11 pr-4 py-3.5 rounded-2xl border border-gray-200 bg-white/60 backdrop-blur-xl shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all text-gray-700 font-medium"
+                    />
+                </div>
+
+                {/* Quick Filters - Pill Buttons */}
+                <div className="flex items-center gap-2 md:gap-3 overflow-x-auto whitespace-nowrap pb-2 w-full md:w-auto snap-x custom-scrollbar order-1 md:order-2 md:justify-end">
                     {filters.map((filter) => (
                         <button
                             key={filter.id}
                             onClick={() => setActiveFilter(filter.id)}
                             className={cn(
-                                "shrink-0 snap-start px-5 py-2 md:py-2.5 rounded-full text-sm md:text-base font-bold transition-all duration-300",
+                                "shrink-0 snap-start px-5 py-2.5 rounded-full text-sm font-bold transition-all duration-300",
                                 activeFilter === filter.id
                                     ? "bg-gradient-to-r from-se-jingga to-orange-500 text-white shadow-[0_8px_20px_rgba(247,144,57,0.25)] ring-1 ring-orange-500/50"
                                     : "bg-white/60 backdrop-blur-xl ring-1 ring-slate-200/50 shadow-sm text-gray-600 hover:text-slate-900 hover:bg-white/90 hover:shadow-md"

@@ -19,18 +19,6 @@ export default function DokumenPage() {
                 <p className="text-xl text-gray-500 max-w-2xl mx-auto leading-relaxed">
                     Akses cepat ke seluruh buku pedoman, surat keputusan, dan materi sosialisasi SE2026.
                 </p>
-
-                {/* Search Bar Placeholder */}
-                <div className="relative max-w-lg mx-auto">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                        <Search className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <input
-                        type="text"
-                        placeholder="Cari dokumen (misal: 'Buku 1', 'SK Tim')..."
-                        className="w-full pl-11 pr-4 py-4 rounded-full border border-gray-200 bg-white shadow-xl shadow-gray-200/50 focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all text-gray-700 font-medium"
-                    />
-                </div>
             </header>
 
             <div className="min-h-screen">
