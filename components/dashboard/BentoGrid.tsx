@@ -37,7 +37,7 @@ const categories: Category[] = [
                 title: "Buku Pedoman SE2026",
                 description: "Buku 1 - Buku 6 (Pedoman Lengkap)",
                 icon: BookOpen,
-                href: "/administrasi/pedoman",
+                href: "https://chatgpt.com",
                 className: "col-span-1 md:col-span-2 row-span-2 bg-gradient-to-br from-white/80 to-white/40 border-white/50",
                 badge: "Penting"
             },
@@ -72,12 +72,12 @@ const categories: Category[] = [
                 className: "md:hover:bg-gradient-to-br md:hover:from-white md:hover:to-orange-50 ring-1 ring-orange-200/50 shadow-orange-100/20",
                 badge: "AI Tool"
             },
-            { title: "Strategi & Branding", icon: Megaphone, href: "/publisitas/strategi", className: "md:col-span-2", description: "Strategi, Theme Song & Logo" },
-            { title: "Desain Medsos & Video", icon: ImageIcon, href: "/publisitas/desain", description: "Konten Instagram/YouTube" },
-            { title: "Merch & Ekraf", icon: Shirt, href: "/publisitas/merch", description: "Seragam & Souvenir" },
-            { title: "Rekap Konten & Sosialisasi", icon: Share2, href: "/publisitas/rekap", description: "Laporan Publisitas" },
-            { title: "Outdoor Advertising", icon: ImageIcon, href: "/publisitas/outdoor", description: "Spanduk, Baliho, Videotron" },
-            { title: "Dukungan Eksternal", icon: Users, href: "/publisitas/dukungan", description: "Dukungan Pemda/Dinas" },
+            { title: "Strategi & Branding", icon: Megaphone, href: "https://s.bps.go.id/mediapublisitasSE2026", className: "md:col-span-2", description: "Strategi, Theme Song & Logo" },
+            { title: "Desain Medsos & Video", icon: ImageIcon, href: "https://s.bps.go.id/mediapublisitasSE2026", description: "Konten Instagram/YouTube" },
+            { title: "Merch & Ekraf", icon: Shirt, href: "https://s.bps.go.id/materipublisitasse2026k...", description: "Seragam & Souvenir" },
+            { title: "Rekap Konten & Sosialisasi", icon: Share2, href: "https://s.bps.go.id/DokumentasiPublisitas_S...", description: "Laporan Publisitas" },
+            { title: "Outdoor Advertising", icon: ImageIcon, href: "https://s.bps.go.id/materipublisitasse2026k...", description: "Spanduk, Baliho, Videotron" },
+            { title: "Dukungan Eksternal", icon: Users, href: "#", description: "Dukungan Pemda/Dinas" },
         ]
     }
 ];
