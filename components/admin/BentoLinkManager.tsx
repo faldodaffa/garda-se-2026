@@ -190,8 +190,9 @@ export default function BentoLinkManager() {
 
             const rows = text.split('\n').map(row => row.split(','));
 
-            const newLinks: BentoLink[] = rows.slice(1).map((row, index) => ({
-                id: Date.now() + index,
+            // Parse CSV into BentoLink array with sequential IDs
+            const replacementLinks: BentoLink[] = rows.slice(1).map((row, index) => ({
+                id: index + 1,
                 kategori: row[0]?.trim() || '',
                 nama: row[1]?.trim() || '',
                 deskripsi: row[2]?.trim() || '',
@@ -199,29 +200,39 @@ export default function BentoLinkManager() {
                 url: row[4]?.trim() || '#'
             })).filter(item => item.nama);
 
-            const mergedLinks = [...bentoLinks, ...newLinks];
-            setBentoLinks(mergedLinks);
+            if (replacementLinks.length === 0) {
+                setSaveStatus('⚠️ File CSV kosong atau format tidak sesuai.');
+                setTimeout(() => setSaveStatus(null), 5000);
+                return;
+            }
 
-            // Auto-save to Supabase Cloud immediately
+            // REPLACE mode: CSV data fully replaces existing data
+            setBentoLinks(replacementLinks);
+
+            // Auto-save to Supabase Cloud: delete all old rows, then insert new from CSV
             try {
+                // Step 1: Delete all existing rows
+                await supabase.from('bento_links').delete().gte('id', 0);
+
+                // Step 2: Insert all new rows from CSV
                 const { error } = await supabase
                     .from('bento_links')
-                    .upsert(mergedLinks.map(item => ({
+                    .insert(replacementLinks.map(item => ({
                         id: Number(item.id),
                         kategori: item.kategori,
                         nama: item.nama,
                         deskripsi: item.deskripsi,
                         label: item.label,
                         url: item.url
-                    })), { onConflict: 'id' });
+                    })));
 
                 if (error) throw error;
-                localStorage.setItem('garda_se2026_bento_links', JSON.stringify(mergedLinks));
-                setSaveStatus(`✅ ${newLinks.length} dokumen dari CSV berhasil diupload & disimpan ke Cloud!`);
+                localStorage.setItem('garda_se2026_bento_links', JSON.stringify(replacementLinks));
+                setSaveStatus(`✅ ${replacementLinks.length} dokumen dari CSV berhasil menggantikan data lama & tersimpan ke Cloud!`);
             } catch (err) {
                 console.error('CSV auto-save to Supabase failed:', err);
-                localStorage.setItem('garda_se2026_bento_links', JSON.stringify(mergedLinks));
-                setSaveStatus(`⚠️ CSV berhasil diproses, tapi gagal sync ke Cloud. Klik "☁️ Simpan ke Cloud" manual.`);
+                localStorage.setItem('garda_se2026_bento_links', JSON.stringify(replacementLinks));
+                setSaveStatus(`⚠️ CSV diproses lokal, tapi gagal sync ke Cloud. Klik "☁️ Simpan ke Cloud" manual.`);
             }
             setTimeout(() => setSaveStatus(null), 6000);
         };
