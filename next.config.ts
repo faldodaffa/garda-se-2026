@@ -6,7 +6,7 @@ const cspHeader = `
   style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://static.elfsight.com https://www.instagram.com;
   img-src 'self' blob: data: https://webapi.bps.go.id https://*.ytimg.com https://*.ggpht.com https://*.elfsight.com https://static.elfsight.com https://*.cdninstagram.com https://*.fbcdn.net https://*.electricblaze.com;
   font-src 'self' data: https://fonts.gstatic.com https://static.elfsight.com;
-  connect-src 'self' https://core.elfsight.com https://static.elfsight.com https://api.electricblaze.com;
+  connect-src 'self' https://*.supabase.co https://core.elfsight.com https://static.elfsight.com https://api.electricblaze.com;
   frame-src 'self' https://www.youtube.com https://*.elfsight.com https://*.elfsight.io https://www.instagram.com https://*.instagram.com;
   object-src 'none';
   base-uri 'self';
