@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { UploadCloud, Link as LinkIcon, Download, Search, Info, Edit2, Check, X, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabaseClient';
+import * as XLSX from 'xlsx';
 
 // Standard Bento Data Model
 interface BentoLink {
@@ -165,78 +166,93 @@ export default function BentoLinkManager() {
 
 
     const downloadTemplate = () => {
-        const header = "Kategori,Nama Dokumen,Deskripsi,Label,URL Tujuan\n";
-        // Export ALL current bento links as a pre-filled CSV
-        const rows = bentoLinks.map(link =>
-            `${link.kategori},${link.nama},${link.deskripsi},${link.label},${link.url}`
-        ).join('\n');
-        const blob = new Blob([header + rows], { type: 'text/csv;charset=utf-8;' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'template_dokumen_se2026.csv';
-        a.click();
-        window.URL.revokeObjectURL(url);
+        // Export ALL current bento links as a native Excel .xlsx file
+        const worksheetData = bentoLinks.map(link => ({
+            'Kategori': link.kategori,
+            'Nama Dokumen': link.nama,
+            'Deskripsi': link.deskripsi,
+            'Label': link.label,
+            'URL Tujuan': link.url
+        }));
+
+        const ws = XLSX.utils.json_to_sheet(worksheetData);
+
+        // Auto-fit column widths for better readability
+        ws['!cols'] = [
+            { wch: 30 }, // Kategori
+            { wch: 30 }, // Nama Dokumen
+            { wch: 40 }, // Deskripsi
+            { wch: 12 }, // Label
+            { wch: 50 }, // URL Tujuan
+        ];
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Tautan Bento');
+        XLSX.writeFile(wb, 'template_dokumen_se2026.xlsx');
     };
 
-    const handleCSVUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
         const reader = new FileReader();
         reader.onload = async (event) => {
-            const text = event.target?.result as string;
-            if (!text) return;
+            const data = event.target?.result;
+            if (!data) return;
 
-            const rows = text.split('\n').map(row => row.split(','));
-
-            // Parse CSV into BentoLink array with sequential IDs
-            const replacementLinks: BentoLink[] = rows.slice(1).map((row, index) => ({
-                id: index + 1,
-                kategori: row[0]?.trim() || '',
-                nama: row[1]?.trim() || '',
-                deskripsi: row[2]?.trim() || '',
-                label: row[3]?.trim() || '',
-                url: row[4]?.trim() || '#'
-            })).filter(item => item.nama);
-
-            if (replacementLinks.length === 0) {
-                setSaveStatus('⚠️ File CSV kosong atau format tidak sesuai.');
-                setTimeout(() => setSaveStatus(null), 5000);
-                return;
-            }
-
-            // REPLACE mode: CSV data fully replaces existing data
-            setBentoLinks(replacementLinks);
-
-            // Auto-save to Supabase Cloud: delete all old rows, then insert new from CSV
             try {
-                // Step 1: Delete all existing rows
-                await supabase.from('bento_links').delete().gte('id', 0);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const rows: any[] = XLSX.utils.sheet_to_json(firstSheet);
 
-                // Step 2: Insert all new rows from CSV
-                const { error } = await supabase
-                    .from('bento_links')
-                    .insert(replacementLinks.map(item => ({
-                        id: Number(item.id),
-                        kategori: item.kategori,
-                        nama: item.nama,
-                        deskripsi: item.deskripsi,
-                        label: item.label,
-                        url: item.url
-                    })));
+                // Parse Excel rows into BentoLink array
+                const replacementLinks: BentoLink[] = rows.map((row, index) => ({
+                    id: index + 1,
+                    kategori: String(row['Kategori'] || '').trim(),
+                    nama: String(row['Nama Dokumen'] || '').trim(),
+                    deskripsi: String(row['Deskripsi'] || '').trim(),
+                    label: String(row['Label'] || '').trim(),
+                    url: String(row['URL Tujuan'] || '#').trim()
+                })).filter(item => item.nama);
 
-                if (error) throw error;
-                localStorage.setItem('garda_se2026_bento_links', JSON.stringify(replacementLinks));
-                setSaveStatus(`✅ ${replacementLinks.length} dokumen dari CSV berhasil menggantikan data lama & tersimpan ke Cloud!`);
-            } catch (err) {
-                console.error('CSV auto-save to Supabase failed:', err);
-                localStorage.setItem('garda_se2026_bento_links', JSON.stringify(replacementLinks));
-                setSaveStatus(`⚠️ CSV diproses lokal, tapi gagal sync ke Cloud. Klik "☁️ Simpan ke Cloud" manual.`);
+                if (replacementLinks.length === 0) {
+                    setSaveStatus('⚠️ File Excel kosong atau format header tidak sesuai.');
+                    setTimeout(() => setSaveStatus(null), 5000);
+                    return;
+                }
+
+                // REPLACE mode: Excel data fully replaces existing data
+                setBentoLinks(replacementLinks);
+
+                // Auto-save to Supabase Cloud
+                try {
+                    await supabase.from('bento_links').delete().gte('id', 0);
+                    const { error } = await supabase
+                        .from('bento_links')
+                        .insert(replacementLinks.map(item => ({
+                            id: Number(item.id),
+                            kategori: item.kategori,
+                            nama: item.nama,
+                            deskripsi: item.deskripsi,
+                            label: item.label,
+                            url: item.url
+                        })));
+
+                    if (error) throw error;
+                    localStorage.setItem('garda_se2026_bento_links', JSON.stringify(replacementLinks));
+                    setSaveStatus(`✅ ${replacementLinks.length} dokumen dari Excel berhasil menggantikan data lama & tersimpan ke Cloud!`);
+                } catch (err) {
+                    console.error('Excel auto-save to Supabase failed:', err);
+                    localStorage.setItem('garda_se2026_bento_links', JSON.stringify(replacementLinks));
+                    setSaveStatus(`⚠️ Excel diproses lokal, tapi gagal sync ke Cloud. Klik "☁️ Simpan ke Cloud" manual.`);
+                }
+            } catch (parseErr) {
+                console.error('Failed to parse Excel file:', parseErr);
+                setSaveStatus('⚠️ Gagal membaca file. Pastikan format file .xlsx atau .csv yang valid.');
             }
             setTimeout(() => setSaveStatus(null), 6000);
         };
-        reader.readAsText(file);
+        reader.readAsArrayBuffer(file);
 
         e.target.value = '';
     };
@@ -253,7 +269,7 @@ export default function BentoLinkManager() {
                         Kelola Tautan Bento
                     </h3>
                     <p className="text-sm text-gray-500 mt-2 max-w-lg">
-                        Manajemen terpusat kotak menu pintar halaman Dokumen. Gunakan Edit baris langsung, atau upload CSV massal.
+                        Manajemen terpusat kotak menu pintar halaman Dokumen. Gunakan Edit baris langsung, atau upload Excel massal.
                     </p>
                 </div>
 
@@ -262,19 +278,19 @@ export default function BentoLinkManager() {
                         onClick={downloadTemplate}
                         className="px-5 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors shadow-sm"
                     >
-                        <Download className="w-4 h-4" /> Template CSV
+                        <Download className="w-4 h-4" /> Template Excel
                     </button>
                     <div className="relative">
                         <input
                             type="file"
-                            accept=".csv"
-                            onChange={handleCSVUpload}
+                            accept=".xlsx,.xls,.csv"
+                            onChange={handleFileUpload}
                             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                            title="Upload CSV Dokumen"
+                            title="Upload Excel / CSV"
                         />
                         <button className="w-full px-5 py-2.5 bg-slate-900 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:bg-se-jingga hover:shadow-lg transition-all shadow-sm">
                             <UploadCloud className="w-4 h-4 text-orange-400" />
-                            Update Serentak (Upload CSV)
+                            Update Serentak (Upload Excel)
                         </button>
                     </div>
                     <button
