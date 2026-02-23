@@ -8,9 +8,9 @@ import {
     Image, Video, Share2, Shirt, ImageIcon, LucideIcon, Sparkles
 } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import { supabase } from '@/lib/supabaseClient';
 
 // Define Interface for Grid Items
 interface GridItem {
@@ -104,98 +104,85 @@ export default function BentoGrid() {
     const [dynamicCategories, setDynamicCategories] = useState<Category[]>(categories);
 
     React.useEffect(() => {
-        const fetchLinks = async () => {
+        const loadFromSupabase = async () => {
             try {
-                const res = await fetch('/api/site-content');
-                const data = await res.json();
+                const { data, error } = await supabase
+                    .from('bento_links')
+                    .select('*')
+                    .order('id', { ascending: true });
 
-                if (data.pedomanLinks && data.pedomanLinks.length > 0) {
-                    const dynamicItems: GridItem[] = data.pedomanLinks.map((link: any) => ({
-                        title: link.title,
-                        description: link.category || "Dokumen Pedoman",
-                        icon: BookOpen,
-                        href: link.url,
-                        className: "bg-white/40",
-                        badge: link.category === 'Penting' ? 'Penting' : undefined
-                    }));
+                if (error) throw error;
 
-                    setDynamicCategories(prev => prev.map(cat => {
-                        if (cat.id === 'administrasi') {
-                            return { ...cat, items: dynamicItems };
-                        }
-                        return cat;
-                    }));
+                if (data && data.length > 0) {
+                    // Successfully fetched from Supabase Cloud DB
+                    mapCMSDataToCategories(data);
+                    return;
                 }
-            } catch (error) {
-                console.error("Failed to load dynamic links", error);
+            } catch (e) {
+                console.warn('Supabase fetch failed, trying localStorage fallback', e);
             }
-        };
 
-        // --- PHASE 45: BACA DATA DARI LOCALSTORAGE CMS BENTO ---
-        const syncFromCMS = () => {
-            const savedData = localStorage.getItem('garda_se2026_bento_links');
-            if (savedData) {
-                try {
-                    const parsedBentoLinks = JSON.parse(savedData);
-
-                    if (Array.isArray(parsedBentoLinks) && parsedBentoLinks.length > 0) {
-                        // Build mapping categories
-                        let administrasiItems: GridItem[] = [];
-                        let persiapanItems: GridItem[] = [];
-                        let publisitasItems: GridItem[] = [
-                            {
-                                title: "PACE AI Generator",
-                                description: "Asisten cerdas pembuat visual maskot & atribut SE2026.",
-                                icon: Sparkles,
-                                href: "https://s.bps.go.id/pacegenerator",
-                                badge: "AI Tool",
-                                className: "md:hover:bg-gradient-to-br md:hover:from-white md:hover:to-orange-50 ring-1 ring-orange-200/50 shadow-orange-100/20"
-                            }
-                        ];
-
-                        parsedBentoLinks.forEach((link: any) => {
-                            // Resolve correct lucide icon heuristic based on category
-                            let targetIcon = FileText;
-                            if (link.kategori.includes('Administrasi')) targetIcon = BookOpen;
-                            if (link.kategori.includes('Persiapan')) targetIcon = BarChart3;
-                            if (link.kategori.includes('Publisitas')) targetIcon = Megaphone;
-
-                            const mappedItem: GridItem = {
-                                title: link.nama,
-                                description: link.deskripsi,
-                                icon: targetIcon,
-                                href: link.url,
-                                badge: link.label || undefined,
-                                className: link.kategori.includes('Administrasi') && link.label === 'PENTING'
-                                    ? "col-span-1 md:col-span-2 row-span-2 bg-gradient-to-br from-white/80 to-white/40 border-white/50"
-                                    : undefined
-                            };
-
-                            if (link.kategori.includes('Administrasi')) administrasiItems.push(mappedItem);
-                            else if (link.kategori.includes('Persiapan')) persiapanItems.push(mappedItem);
-                            else if (link.kategori.includes('Publisitas')) publisitasItems.push(mappedItem);
-                        });
-
-                        // Override static categories completely with mapped CMS payload
-                        setDynamicCategories([
-                            { id: 'administrasi', title: '1. Administrasi SE2026', items: administrasiItems },
-                            { id: 'persiapan', title: '2. Informasi & Persiapan SE2026', items: persiapanItems },
-                            { id: 'publisitas', title: '3. Publisitas & Media', items: publisitasItems }
-                        ]);
-                        return true; // Sync success
+            // Fallback 1: Try localStorage
+            try {
+                const savedData = localStorage.getItem('garda_se2026_bento_links');
+                if (savedData) {
+                    const parsed = JSON.parse(savedData);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        mapCMSDataToCategories(parsed);
+                        return;
                     }
-                } catch (e) {
-                    console.error("Gagal sinkronisasi data Bento dari LocalStorage", e);
                 }
+            } catch (e) {
+                console.warn('localStorage fallback also failed', e);
             }
-            return false;
+
+            // Fallback 2: Keep static default categories (already in state)
         };
 
-        // If local CMS data exists, use it. Otherwise attempt to fetch API logic (Legacy behaviour)
-        const hasLocalStorage = syncFromCMS();
-        if (!hasLocalStorage) {
-            fetchLinks();
-        }
+        const mapCMSDataToCategories = (parsedBentoLinks: any[]) => {
+            let administrasiItems: GridItem[] = [];
+            let persiapanItems: GridItem[] = [];
+            let publisitasItems: GridItem[] = [
+                {
+                    title: "PACE AI Generator",
+                    description: "Asisten cerdas pembuat visual maskot & atribut SE2026.",
+                    icon: Sparkles,
+                    href: "https://s.bps.go.id/pacegenerator",
+                    badge: "AI Tool",
+                    className: "md:hover:bg-gradient-to-br md:hover:from-white md:hover:to-orange-50 ring-1 ring-orange-200/50 shadow-orange-100/20"
+                }
+            ];
+
+            parsedBentoLinks.forEach((link: any) => {
+                let targetIcon = FileText;
+                if (link.kategori.includes('Administrasi')) targetIcon = BookOpen;
+                if (link.kategori.includes('Persiapan')) targetIcon = BarChart3;
+                if (link.kategori.includes('Publisitas')) targetIcon = Megaphone;
+
+                const mappedItem: GridItem = {
+                    title: link.nama,
+                    description: link.deskripsi,
+                    icon: targetIcon,
+                    href: link.url,
+                    badge: link.label || undefined,
+                    className: link.kategori.includes('Administrasi') && link.label === 'PENTING'
+                        ? "col-span-1 md:col-span-2 row-span-2 bg-gradient-to-br from-white/80 to-white/40 border-white/50"
+                        : undefined
+                };
+
+                if (link.kategori.includes('Administrasi')) administrasiItems.push(mappedItem);
+                else if (link.kategori.includes('Persiapan')) persiapanItems.push(mappedItem);
+                else if (link.kategori.includes('Publisitas')) publisitasItems.push(mappedItem);
+            });
+
+            setDynamicCategories([
+                { id: 'administrasi', title: '1. Administrasi SE2026', items: administrasiItems },
+                { id: 'persiapan', title: '2. Informasi & Persiapan SE2026', items: persiapanItems },
+                { id: 'publisitas', title: '3. Publisitas & Media', items: publisitasItems }
+            ]);
+        };
+
+        loadFromSupabase();
     }, []);
 
     const filteredCategories = (activeFilter === 'all'

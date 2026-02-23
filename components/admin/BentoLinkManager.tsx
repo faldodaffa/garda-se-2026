@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { UploadCloud, Link as LinkIcon, Download, Search, Info, Edit2, Check, X } from 'lucide-react';
+import { UploadCloud, Link as LinkIcon, Download, Search, Info, Edit2, Check, X, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/lib/supabaseClient';
 
 // Standard Bento Data Model
 interface BentoLink {
@@ -44,26 +45,88 @@ export default function BentoLinkManager() {
     const [bentoLinks, setBentoLinks] = useState<BentoLink[]>(defaultBentoData);
     const [searchTerm, setSearchTerm] = useState('');
     const [isLoaded, setIsLoaded] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [saveStatus, setSaveStatus] = useState<string | null>(null);
 
-    // 1. DATA LOADER ON MOUNT
+    // 1. DATA LOADER ON MOUNT — Fetch from Supabase Cloud DB
     useEffect(() => {
-        const savedData = localStorage.getItem('garda_se2026_bento_links');
-        if (savedData) {
+        const loadFromSupabase = async () => {
             try {
-                setBentoLinks(JSON.parse(savedData));
+                const { data, error } = await supabase
+                    .from('bento_links')
+                    .select('*')
+                    .order('id', { ascending: true });
+
+                if (error) throw error;
+
+                if (data && data.length > 0) {
+                    setBentoLinks(data as BentoLink[]);
+                } else {
+                    // Table exists but is empty, seed with default data
+                    await seedDefaultData();
+                }
             } catch (e) {
-                console.error("Failed to parse saved BentoLinks", e);
+                console.warn('Supabase fetch failed, falling back to localStorage', e);
+                // Fallback to localStorage
+                const savedData = localStorage.getItem('garda_se2026_bento_links');
+                if (savedData) {
+                    try { setBentoLinks(JSON.parse(savedData)); } catch { /* ignore */ }
+                }
             }
-        }
-        setIsLoaded(true);
+            setIsLoaded(true);
+        };
+
+        const seedDefaultData = async () => {
+            try {
+                const { error } = await supabase
+                    .from('bento_links')
+                    .upsert(defaultBentoData.map(item => ({
+                        id: Number(item.id),
+                        kategori: item.kategori,
+                        nama: item.nama,
+                        deskripsi: item.deskripsi,
+                        label: item.label,
+                        url: item.url
+                    })), { onConflict: 'id' });
+                if (error) throw error;
+            } catch (e) {
+                console.error('Failed to seed default data to Supabase', e);
+            }
+        };
+
+        loadFromSupabase();
     }, []);
 
-    // 2. AUTO-SAVE ON CHANGE
-    useEffect(() => {
-        if (isLoaded) {
+    // 2. SAVE TO SUPABASE — Triggered manually via Save button
+    const saveToSupabase = async () => {
+        setIsSaving(true);
+        setSaveStatus(null);
+        try {
+            const { error } = await supabase
+                .from('bento_links')
+                .upsert(bentoLinks.map(item => ({
+                    id: Number(item.id),
+                    kategori: item.kategori,
+                    nama: item.nama,
+                    deskripsi: item.deskripsi,
+                    label: item.label,
+                    url: item.url
+                })), { onConflict: 'id' });
+
+            if (error) throw error;
+
+            // Also keep localStorage as fallback
             localStorage.setItem('garda_se2026_bento_links', JSON.stringify(bentoLinks));
+            setSaveStatus('✅ Berhasil disimpan ke Database Cloud! Semua perangkat akan tersinkronisasi.');
+        } catch (e) {
+            console.error('Supabase save failed', e);
+            // Fallback save to localStorage
+            localStorage.setItem('garda_se2026_bento_links', JSON.stringify(bentoLinks));
+            setSaveStatus('⚠️ Gagal menyimpan ke Cloud. Data disimpan secara lokal saja.');
         }
-    }, [bentoLinks, isLoaded]);
+        setIsSaving(false);
+        setTimeout(() => setSaveStatus(null), 5000);
+    };
 
     // --- State for Inline Editing ---
     const [editingId, setEditingId] = useState<string | number | null>(null);
@@ -161,8 +224,26 @@ export default function BentoLinkManager() {
                             Update Serentak (Upload CSV)
                         </button>
                     </div>
+                    <button
+                        onClick={saveToSupabase}
+                        disabled={isSaving}
+                        className="px-5 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:from-green-700 hover:to-emerald-700 hover:shadow-lg transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                        {isSaving ? 'Menyimpan...' : '☁️ Simpan ke Cloud'}
+                    </button>
                 </div>
             </div>
+
+            {/* Cloud Save Status */}
+            {saveStatus && (
+                <div className={cn(
+                    "px-4 py-3 rounded-xl text-sm font-medium",
+                    saveStatus.includes('✅') ? "bg-green-50 text-green-700 border border-green-200" : "bg-yellow-50 text-yellow-700 border border-yellow-200"
+                )}>
+                    {saveStatus}
+                </div>
+            )}
 
             {/* List Table UI */}
             <div className="flex-1 flex flex-col gap-4">
