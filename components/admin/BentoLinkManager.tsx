@@ -166,8 +166,11 @@ export default function BentoLinkManager() {
 
     const downloadTemplate = () => {
         const header = "Kategori,Nama Dokumen,Deskripsi,Label,URL Tujuan\n";
-        const sampleRow = "Administrasi SE2026,Buku Pedoman SE2026,Buku 1 - Buku 6 (Pedoman Lengkap),PENTING,https://drive.google.com/...\n";
-        const blob = new Blob([header + sampleRow], { type: 'text/csv' });
+        // Export ALL current bento links as a pre-filled CSV
+        const rows = bentoLinks.map(link =>
+            `${link.kategori},${link.nama},${link.deskripsi},${link.label},${link.url}`
+        ).join('\n');
+        const blob = new Blob([header + rows], { type: 'text/csv;charset=utf-8;' });
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -176,18 +179,18 @@ export default function BentoLinkManager() {
         window.URL.revokeObjectURL(url);
     };
 
-    const handleCSVUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleCSVUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
         const reader = new FileReader();
-        reader.onload = (event) => {
+        reader.onload = async (event) => {
             const text = event.target?.result as string;
             if (!text) return;
 
             const rows = text.split('\n').map(row => row.split(','));
 
-            const newLinks = rows.slice(1).map((row, index) => ({
+            const newLinks: BentoLink[] = rows.slice(1).map((row, index) => ({
                 id: Date.now() + index,
                 kategori: row[0]?.trim() || '',
                 nama: row[1]?.trim() || '',
@@ -196,8 +199,31 @@ export default function BentoLinkManager() {
                 url: row[4]?.trim() || '#'
             })).filter(item => item.nama);
 
-            setBentoLinks([...bentoLinks, ...newLinks]);
-            alert(`✅ Berhasil memperbarui ${newLinks.length} dokumen secara serentak dari CSV!`);
+            const mergedLinks = [...bentoLinks, ...newLinks];
+            setBentoLinks(mergedLinks);
+
+            // Auto-save to Supabase Cloud immediately
+            try {
+                const { error } = await supabase
+                    .from('bento_links')
+                    .upsert(mergedLinks.map(item => ({
+                        id: Number(item.id),
+                        kategori: item.kategori,
+                        nama: item.nama,
+                        deskripsi: item.deskripsi,
+                        label: item.label,
+                        url: item.url
+                    })), { onConflict: 'id' });
+
+                if (error) throw error;
+                localStorage.setItem('garda_se2026_bento_links', JSON.stringify(mergedLinks));
+                setSaveStatus(`✅ ${newLinks.length} dokumen dari CSV berhasil diupload & disimpan ke Cloud!`);
+            } catch (err) {
+                console.error('CSV auto-save to Supabase failed:', err);
+                localStorage.setItem('garda_se2026_bento_links', JSON.stringify(mergedLinks));
+                setSaveStatus(`⚠️ CSV berhasil diproses, tapi gagal sync ke Cloud. Klik "☁️ Simpan ke Cloud" manual.`);
+            }
+            setTimeout(() => setSaveStatus(null), 6000);
         };
         reader.readAsText(file);
 
