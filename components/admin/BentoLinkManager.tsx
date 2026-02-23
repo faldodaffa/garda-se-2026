@@ -101,31 +101,47 @@ export default function BentoLinkManager() {
     const saveToSupabase = async () => {
         setIsSaving(true);
         setSaveStatus(null);
+
+        // Diagnostic check: are env vars present?
+        const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+        if (!url || !key) {
+            setSaveStatus(`⚠️ Env vars tidak terbaca! URL=${url ? '✅' : '❌'} KEY=${key ? '✅' : '❌'}. Pastikan sudah di-set di Vercel dan Redeploy.`);
+            localStorage.setItem('garda_se2026_bento_links', JSON.stringify(bentoLinks));
+            setIsSaving(false);
+            return;
+        }
+
         try {
+            const payload = bentoLinks.map(item => ({
+                id: Number(item.id),
+                kategori: item.kategori,
+                nama: item.nama,
+                deskripsi: item.deskripsi,
+                label: item.label,
+                url: item.url
+            }));
+
             const { error } = await supabase
                 .from('bento_links')
-                .upsert(bentoLinks.map(item => ({
-                    id: Number(item.id),
-                    kategori: item.kategori,
-                    nama: item.nama,
-                    deskripsi: item.deskripsi,
-                    label: item.label,
-                    url: item.url
-                })), { onConflict: 'id' });
+                .upsert(payload, { onConflict: 'id' });
 
-            if (error) throw error;
+            if (error) {
+                console.error('Supabase upsert error details:', JSON.stringify(error));
+                throw new Error(`Supabase Error: ${error.message} (Code: ${error.code})`);
+            }
 
             // Also keep localStorage as fallback
             localStorage.setItem('garda_se2026_bento_links', JSON.stringify(bentoLinks));
             setSaveStatus('✅ Berhasil disimpan ke Database Cloud! Semua perangkat akan tersinkronisasi.');
-        } catch (e) {
-            console.error('Supabase save failed', e);
-            // Fallback save to localStorage
+        } catch (e: any) {
+            console.error('Supabase save failed:', e);
             localStorage.setItem('garda_se2026_bento_links', JSON.stringify(bentoLinks));
-            setSaveStatus('⚠️ Gagal menyimpan ke Cloud. Data disimpan secara lokal saja.');
+            setSaveStatus(`⚠️ Gagal: ${e?.message || 'Unknown error'}. Data disimpan lokal saja.`);
         }
         setIsSaving(false);
-        setTimeout(() => setSaveStatus(null), 5000);
+        setTimeout(() => setSaveStatus(null), 8000);
     };
 
     // --- State for Inline Editing ---
