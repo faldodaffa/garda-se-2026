@@ -93,7 +93,7 @@ export default function MonitoringPage() {
 
                 <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
                     <div>
-                        <p className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-1">Progres Nasional</p>
+                        <p className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-1">Progres</p>
                         <p className="text-3xl font-extrabold text-[#f79039]">{progresNasional}%</p>
                     </div>
                     <div className="w-12 h-12 bg-orange-50 text-[#f79039] rounded-full flex items-center justify-center shrink-0">
@@ -120,28 +120,69 @@ export default function MonitoringPage() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
-                            {monitoringData.map((row) => (
-                                <tr key={row.id} className="hover:bg-gray-50/50 transition-colors">
-                                    <td className="p-4 pl-6 font-bold text-gray-900">{row.wilayah}</td>
-                                    <td className="p-4 text-sm text-gray-500">{row.wilayah_induk}</td>
-                                    <td className="p-4 text-right font-mono text-sm text-gray-600">{row.target.toLocaleString('id-ID')}</td>
-                                    <td className="p-4 text-right font-mono text-sm font-medium text-gray-900">{row.selesai.toLocaleString('id-ID')}</td>
-                                    <td className="p-4 align-middle pr-6">
-                                        <div className="flex items-center gap-3">
-                                            <span className="text-sm font-bold text-slate-700 w-14 text-right">{row.progres}%</span>
-                                            <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
-                                                <div
-                                                    className={`h-2.5 rounded-full transition-all duration-1000 ease-out ${row.progres >= 90 ? 'bg-green-500' :
-                                                        row.progres >= 50 ? 'bg-yellow-400' :
-                                                            'bg-red-500'
-                                                        }`}
-                                                    style={{ width: `${row.progres}%` }}
-                                                ></div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
+                            {['PAPUA', 'PAPUA SELATAN', 'PAPUA TENGAH', 'PAPUA PEGUNUNGAN'].map((prov) => {
+                                const kabs = monitoringData.filter(d => d.wilayah_induk === prov);
+                                if (kabs.length === 0) return null;
+
+                                const provTarget = kabs.reduce((s, i) => s + i.target, 0);
+                                const provSelesai = kabs.reduce((s, i) => s + i.selesai, 0);
+                                const provProgres = provTarget > 0 ? ((provSelesai / provTarget) * 100).toFixed(2) : '0.00';
+                                const provCode = prov === 'PAPUA' ? '94' : prov === 'PAPUA SELATAN' ? '95' : prov === 'PAPUA TENGAH' ? '96' : '97';
+
+                                return (
+                                    <React.Fragment key={prov}>
+                                        {/* Render Kabupatens */}
+                                        {kabs.map((row) => (
+                                            <tr key={row.id} className="hover:bg-gray-50/50 transition-colors">
+                                                <td className="p-4 pl-6 font-bold text-gray-900 border-l-[3px] border-transparent">{row.wilayah}</td>
+                                                <td className="p-4 text-sm text-gray-400">{row.wilayah_induk}</td>
+                                                <td className="p-4 text-right font-mono text-sm text-gray-600">{row.target.toLocaleString('id-ID')}</td>
+                                                <td className="p-4 text-right font-mono text-sm font-medium text-gray-900">{row.selesai.toLocaleString('id-ID')}</td>
+                                                <td className="p-4 align-middle pr-6">
+                                                    <div className="flex items-center gap-3">
+                                                        <span className="text-sm font-bold text-slate-700 w-14 text-right">{row.progres}%</span>
+                                                        <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                                                            <div
+                                                                className={`h-2.5 rounded-full transition-all duration-1000 ease-out ${row.progres >= 90 ? 'bg-green-500' :
+                                                                    row.progres >= 50 ? 'bg-yellow-400' :
+                                                                        'bg-red-500'
+                                                                    }`}
+                                                                style={{ width: `${row.progres}%` }}
+                                                            ></div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+
+                                        {/* Render Province Recap Row directly below its Kabupatens */}
+                                        <tr className="bg-orange-50/30 border-t border-orange-100/80 hover:bg-orange-50/60 transition-colors">
+                                            <td className="p-4 pl-6 font-bold text-gray-900 border-l-[3px] border-se-jingga" colSpan={2}>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-orange-500 font-mono text-sm">[{provCode}]</span>
+                                                    <span className="italic tracking-wide text-[15px]">{prov}</span>
+                                                </div>
+                                            </td>
+                                            <td className="p-4 text-right font-mono text-sm font-bold text-gray-800">{provTarget.toLocaleString('id-ID')}</td>
+                                            <td className="p-4 text-right font-mono text-sm font-extrabold text-gray-900">{provSelesai.toLocaleString('id-ID')}</td>
+                                            <td className="p-4 align-middle pr-6">
+                                                <div className="flex items-center gap-3">
+                                                    <span className="text-sm font-extrabold text-orange-600 w-14 text-right">{provProgres}%</span>
+                                                    <div className="w-full bg-orange-100 rounded-full h-2.5 overflow-hidden drop-shadow-sm">
+                                                        <div
+                                                            className={`h-2.5 rounded-full transition-all duration-1000 ease-out ${Number(provProgres) >= 90 ? 'bg-green-500' :
+                                                                Number(provProgres) >= 50 ? 'bg-yellow-400' :
+                                                                    'bg-red-500'
+                                                                }`}
+                                                            style={{ width: `${provProgres}%` }}
+                                                        ></div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </React.Fragment>
+                                );
+                            })}
                         </tbody>
                     </table>
                 </div>
