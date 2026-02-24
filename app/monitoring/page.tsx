@@ -15,6 +15,8 @@ interface RegionalData {
 
 export default function MonitoringPage() {
     const [progresNasional, setProgresNasional] = useState<string>('...');
+    const [targetNasional, setTargetNasional] = useState<number>(0);
+    const [selesaiNasional, setSelesaiNasional] = useState<number>(0);
     const [lastUpdate, setLastUpdate] = useState<string>('Memuat data...');
     const [monitoringData, setMonitoringData] = useState<RegionalData[]>([]);
     const [isLoadError, setIsLoadError] = useState(false);
@@ -35,6 +37,8 @@ export default function MonitoringPage() {
 
                 if (json.success && json.data) {
                     if (json.data.progresNasional) setProgresNasional(json.data.progresNasional);
+                    if (json.data.targetNasional) setTargetNasional(json.data.targetNasional);
+                    if (json.data.selesaiNasional) setSelesaiNasional(json.data.selesaiNasional);
                     if (json.data.lastUpdate) setLastUpdate(json.data.lastUpdate);
                     if (json.data.monitoringData) setMonitoringData(json.data.monitoringData);
                 } else {
@@ -49,9 +53,9 @@ export default function MonitoringPage() {
         fetchSheetData();
     }, []);
 
-    // Tabular math for absolute values based on dynamic real-time dataset
-    const totalUsaha = monitoringData.reduce((sum, item) => sum + item.target, 0);
-    const totalSelesai = monitoringData.reduce((sum, item) => sum + item.selesai, 0);
+    // Native sheet values take precedence. Tabular math acts as a fallback.
+    const totalUsaha = targetNasional > 0 ? targetNasional : monitoringData.reduce((sum, item) => sum + item.target, 0);
+    const totalSelesai = selesaiNasional > 0 ? selesaiNasional : monitoringData.reduce((sum, item) => sum + item.selesai, 0);
 
     // AI Analytical Engine (Filter & Sort Pipeline)
     const processedData = React.useMemo(() => {
@@ -120,7 +124,9 @@ export default function MonitoringPage() {
 
                 <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
                     <div>
-                        <p className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-1">Progres</p>
+                        <p className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-1">
+                            Progres <span className="lowercase text-xs font-medium bg-orange-100 text-orange-800 px-1.5 py-0.5 rounded ml-1">Selesai vs Target</span>
+                        </p>
                         <p className="text-3xl font-extrabold text-[#f79039]">{progresNasional}%</p>
                     </div>
                     <div className="w-12 h-12 bg-orange-50 text-[#f79039] rounded-full flex items-center justify-center shrink-0">

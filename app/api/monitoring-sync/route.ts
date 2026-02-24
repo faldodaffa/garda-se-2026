@@ -27,6 +27,8 @@ export async function GET() {
         const data = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as any[][];
 
         let progresNasional = null;
+        let targetNasional = 0;
+        let selesaiNasional = 0;
         let lastUpdate = null;
         const monitoringData: any[] = [];
 
@@ -89,6 +91,8 @@ export async function GET() {
             // Grand Total signature: No Label in Col C, big numbers in D/E/F
             if (!colC && typeof colD === 'number' && typeof colE === 'number' && typeof colF === 'number') {
                 if (colD > 100000) { // Safety check, total SBR is ~194k nationwide
+                    targetNasional = colD;
+                    selesaiNasional = colE;
                     progresNasional = colF.toFixed(2); // Extract precisely rounded percentage
                     break; // Stop scanning once found
                 }
@@ -99,6 +103,8 @@ export async function GET() {
             success: true,
             data: {
                 progresNasional,
+                targetNasional,
+                selesaiNasional,
                 lastUpdate,
                 monitoringData
             }
