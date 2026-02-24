@@ -4,10 +4,9 @@ import React, { useState } from 'react';
 import { Database, Save, Loader2, Link2, ShieldAlert } from 'lucide-react';
 
 export default function MonitoringConfig() {
-    const [apiKey, setApiKey] = useState('AKfycby...'); // Placeholder/Mock
-    const [sheetId, setSheetId] = useState('1BxiMVs0XRYFa...'); // Placeholder/Mock
+    const sheetId = '185TsYlPWC5TOGttuXuy19qO28h5cd1UkwpaSxCsGhQE';
     const [isSaving, setIsSaving] = useState(false);
-    const [lastSync, setLastSync] = useState('21 Feb 2026, 09:30 WIT');
+    const [lastSync, setLastSync] = useState('Real-Time (Bypass CSV)');
 
     const handleSave = () => {
         setIsSaving(true);
@@ -28,7 +27,7 @@ export default function MonitoringConfig() {
                         Monitoring API Config
                     </h3>
                     <p className="text-sm text-gray-500 mt-2 max-w-xl leading-relaxed">
-                        Data monitoring progres 29 Kabupaten/Kota ditarik secara otomatis menggunakan <i>headless Google Apps Script</i>. Anda hanya perlu menyimpan Kunci API dan ID Spreadsheet terpusat.
+                        Data monitoring ditarik secara otomatis menggunakan arsitektur <b>Bypass Endpoint CSV</b> (Tanpa limit API). Data langsung dirender ke klien tanpa memerlukan Google Cloud Service Account.
                     </p>
                 </div>
 
@@ -42,11 +41,11 @@ export default function MonitoringConfig() {
                 </div>
             </div>
 
-            <div className="bg-orange-50/50 border border-orange-100 rounded-xl p-5 flex gap-4 items-start">
-                <ShieldAlert className="w-6 h-6 text-orange-500 shrink-0 mt-0.5" />
-                <div className="text-sm text-orange-900 space-y-1">
-                    <p className="font-bold">Perhatian Keamanan Data</p>
-                    <p className="text-orange-700">Pastikan Spreadsheet target memiliki izin baca (View) untuk link publik, atau gunakan Service Account JSON jika repository bersifat privat.</p>
+            <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-5 flex gap-4 items-start">
+                <ShieldAlert className="w-6 h-6 text-emerald-500 shrink-0 mt-0.5" />
+                <div className="text-sm text-emerald-900 space-y-1">
+                    <p className="font-bold">Keamanan & Kecepatan Maksimal (Status: Aktif)</p>
+                    <p className="text-emerald-700">Skrip bypass telah aktif. Spreadsheet target disetel ke publik (View Only), sehingga website Garda SE2026 dapat menarik data tanpa <i>bottleneck</i> server Google Cloud Platform.</p>
                 </div>
             </div>
 
@@ -54,30 +53,15 @@ export default function MonitoringConfig() {
                 <div className="space-y-2">
                     <label className="text-sm font-bold text-gray-700 flex items-center gap-2">
                         <Link2 className="w-4 h-4 text-gray-400" />
-                        Google Sheet ID
+                        Google Sheet ID Utama Tim IT (Hardcoded)
                     </label>
                     <input
                         type="text"
                         value={sheetId}
-                        onChange={(e) => setSheetId(e.target.value)}
-                        placeholder="Masukkan ID Spreadsheet..."
-                        className="w-full font-mono text-sm px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-se-jingga focus:border-transparent outline-none transition-all"
+                        readOnly
+                        className="w-full font-mono text-sm px-4 py-3 bg-gray-100 border border-gray-200 text-gray-600 rounded-xl cursor-not-allowed outline-none"
                     />
-                    <p className="text-xs text-gray-400 font-mono pl-1">Ex: https://docs.google.com/spreadsheets/d/<span className="font-bold text-gray-600 border-b border-gray-300">1BxiMVs0XRYFa...</span>/edit</p>
-                </div>
-
-                <div className="space-y-2">
-                    <label className="text-sm font-bold text-gray-700 flex items-center gap-2">
-                        <Database className="w-4 h-4 text-gray-400" />
-                        API Deployment Key (Google Apps Script)
-                    </label>
-                    <input
-                        type="password"
-                        value={apiKey}
-                        onChange={(e) => setApiKey(e.target.value)}
-                        placeholder="AKfycb..."
-                        className="w-full font-mono text-sm px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-se-jingga focus:border-transparent outline-none transition-all"
-                    />
+                    <p className="text-xs text-gray-400 font-mono pl-1">Menghubungkan ke: https://docs.google.com/spreadsheets/d/<span className="font-bold text-gray-600 border-b border-gray-300">{sheetId}</span>/edit</p>
                 </div>
             </div>
 

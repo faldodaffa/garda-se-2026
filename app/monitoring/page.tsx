@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Building2, CheckCircle2, TrendingUp } from 'lucide-react';
 
@@ -16,10 +16,40 @@ const monitoringData = [
 ];
 
 export default function MonitoringPage() {
-    // Math Logic for Hardcoded Vercel Deployment Rollback
+    const [progresNasional, setProgresNasional] = useState<string>('...');
+    const [lastUpdate, setLastUpdate] = useState<string>('Memuat data...');
+    const [isLoadError, setIsLoadError] = useState(false);
+
+    // Hardcoded Sheet ID from IT Team
+    const SHEET_ID = '185TsYlPWC5TOGttuXuy19qO28h5cd1UkwpaSxCsGhQE';
+
+    React.useEffect(() => {
+        const fetchSheetData = async () => {
+            try {
+                // Bypass Google Cloud API securely by hitting the CSV Export endpoint natively
+                const res = await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv`);
+                if (!res.ok) throw new Error("Terjadi kesalahan koneksi ke Google Servers.");
+
+                const text = await res.text();
+                const rows = text.split('\n').map(r => r.split(','));
+
+                const pRow = rows.find(r => r[0]?.trim().toLowerCase() === 'progres');
+                const uRow = rows.find(r => r[0]?.trim().toLowerCase() === 'update');
+
+                if (pRow && pRow[1]) setProgresNasional(pRow[1].trim());
+                if (uRow && uRow[1]) setLastUpdate(uRow[1].trim());
+
+            } catch (err) {
+                console.error("Gagal load Google Sheet", err);
+                setIsLoadError(true);
+            }
+        }
+        fetchSheetData();
+    }, []);
+
+    // Tabular math for absolute values
     const totalUsaha = monitoringData.reduce((sum, item) => sum + item.target, 0);
     const totalSelesai = monitoringData.reduce((sum, item) => sum + item.selesai, 0);
-    const avgProgres = ((totalSelesai / totalUsaha) * 100).toFixed(2);
 
     return (
         <motion.div
@@ -36,6 +66,10 @@ export default function MonitoringPage() {
                 <p className="text-xl text-gray-500 max-w-2xl leading-relaxed">
                     Dashboard Monitoring Eksekutif Rekrutmen & Pelaksanaan Ground Check Sensus Ekonomi Provinsi Papua.
                 </p>
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-full text-sm font-medium text-gray-600 border border-gray-200 shadow-sm mt-4">
+                    <div className={`w-2 h-2 rounded-full ${isLoadError ? 'bg-red-500' : 'bg-green-500 animate-pulse'}`}></div>
+                    Update Terakhir: {lastUpdate}
+                </div>
             </div>
 
             {/* Summary Cards */}
@@ -63,7 +97,7 @@ export default function MonitoringPage() {
                 <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
                     <div>
                         <p className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-1">Progres Nasional</p>
-                        <p className="text-3xl font-extrabold text-[#f79039]">{avgProgres}%</p>
+                        <p className="text-3xl font-extrabold text-[#f79039]">{progresNasional}%</p>
                     </div>
                     <div className="w-12 h-12 bg-orange-50 text-[#f79039] rounded-full flex items-center justify-center shrink-0">
                         <TrendingUp className="w-6 h-6" />
