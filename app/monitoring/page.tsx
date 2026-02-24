@@ -4,24 +4,20 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Building2, CheckCircle2, TrendingUp } from 'lucide-react';
 
-const monitoringData = [
-    { id: 1, wilayah: 'JAYAPURA', target: 18902, selesai: 18148, progres: 96.01, wilayah_induk: 'PAPUA' },
-    { id: 2, wilayah: 'BIAK NUMFOR', target: 10481, selesai: 9074, progres: 86.58, wilayah_induk: 'PAPUA' },
-    { id: 3, wilayah: 'MERAUKE', target: 32699, selesai: 25102, progres: 76.77, wilayah_induk: 'PAPUA SELATAN' },
-    { id: 4, wilayah: 'BOVEN DIGOEL', target: 3864, selesai: 3862, progres: 99.95, wilayah_induk: 'PAPUA SELATAN' },
-    { id: 5, wilayah: 'MIMIKA', target: 27507, selesai: 27506, progres: 100.00, wilayah_induk: 'PAPUA TENGAH' },
-    { id: 6, wilayah: 'DEIYAI', target: 675, selesai: 133, progres: 19.70, wilayah_induk: 'PAPUA TENGAH' },
-    { id: 7, wilayah: 'JAYAWIJAYA', target: 10215, selesai: 9946, progres: 97.37, wilayah_induk: 'PAPUA PEGUNUNGAN' },
-    { id: 8, wilayah: 'NDUGA', target: 562, selesai: 233, progres: 41.46, wilayah_induk: 'PAPUA PEGUNUNGAN' },
-];
+interface RegionalData {
+    id: string | number;
+    wilayah: string;
+    target: number;
+    selesai: number;
+    progres: number;
+    wilayah_induk: string;
+}
 
 export default function MonitoringPage() {
     const [progresNasional, setProgresNasional] = useState<string>('...');
     const [lastUpdate, setLastUpdate] = useState<string>('Memuat data...');
+    const [monitoringData, setMonitoringData] = useState<RegionalData[]>([]);
     const [isLoadError, setIsLoadError] = useState(false);
-
-    // Hardcoded Sheet ID from IT Team
-    const SHEET_ID = '185TsYlPWC5TOGttuXuy19qO28h5cd1UkwpaSxCsGhQE';
 
     React.useEffect(() => {
         const fetchSheetData = async () => {
@@ -35,6 +31,7 @@ export default function MonitoringPage() {
                 if (json.success && json.data) {
                     if (json.data.progresNasional) setProgresNasional(json.data.progresNasional);
                     if (json.data.lastUpdate) setLastUpdate(json.data.lastUpdate);
+                    if (json.data.monitoringData) setMonitoringData(json.data.monitoringData);
                 } else {
                     throw new Error("Format data dari API tidak valid.");
                 }
@@ -47,7 +44,7 @@ export default function MonitoringPage() {
         fetchSheetData();
     }, []);
 
-    // Tabular math for absolute values
+    // Tabular math for absolute values based on dynamic real-time dataset
     const totalUsaha = monitoringData.reduce((sum, item) => sum + item.target, 0);
     const totalSelesai = monitoringData.reduce((sum, item) => sum + item.selesai, 0);
 

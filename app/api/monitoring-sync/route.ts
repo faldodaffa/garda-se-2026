@@ -28,25 +28,65 @@ export async function GET() {
 
         let progresNasional = null;
         let lastUpdate = null;
+        const monitoringData: any[] = [];
 
-        // Based on the sheet structure: Update date is at Row 4, Col A (Index 3, 0)
+        // 1. Extract Last Update Date
         if (data[3] && data[3][0]) {
             lastUpdate = typeof data[3][0] === 'string' ? data[3][0].trim() : data[3][0].toString().trim();
         }
 
-        // To find the Grand Total row resiliently:
-        // We scan from the bottom up. The Grand Total row lacks a label in Column C (Index 2), 
-        // but has massive numbers > 100k in Column D (Index 3) for Total Usaha SBR.
+        // 2. Extract Regional Data (Kabupaten level)
+        for (let i = 4; i < data.length; i++) {
+            const row = data[i];
+            if (!row || row.length < 6) continue;
+
+            const colA = row[0]; // Kode Provinsi
+            const colB = row[1]; // Kode Kab
+            const colC = row[2]; // Nama Wilayah
+            const colD = row[3]; // Total SBR
+            const colE = row[4]; // Total GC
+            const colF = row[5]; // Persentase GC
+
+            // Needs to have a valid Kode Kab and actual numbers to be a valid region row
+            if (colC && typeof colB === 'number' && typeof colD === 'number' && typeof colE === 'number') {
+
+                // Map Province Code to Name
+                let wilayah_induk = 'Provinsi Lainnya';
+                if (colA === 94) wilayah_induk = 'PAPUA';
+                else if (colA === 95) wilayah_induk = 'PAPUA SELATAN';
+                else if (colA === 96) wilayah_induk = 'PAPUA TENGAH';
+                else if (colA === 97) wilayah_induk = 'PAPUA PEGUNUNGAN';
+
+                // Clean percentage
+                let progresValue = 0;
+                if (typeof colF === 'number') {
+                    progresValue = Number((colF * 100).toFixed(2));
+                } else if (typeof colF === 'string') {
+                    progresValue = Number(colF.replace('%', '').trim());
+                }
+
+                monitoringData.push({
+                    id: `${colA}-${colB}`,
+                    wilayah: String(colC).trim(),
+                    target: colD,
+                    selesai: colE,
+                    progres: progresValue || 0,
+                    wilayah_induk: wilayah_induk
+                });
+            }
+        }
+
+        // 3. Extract Grand Total
         for (let i = data.length - 1; i >= 0; i--) {
             const row = data[i];
             if (!row || row.length < 6) continue;
 
-            const colC = row[2]; // Wilayah Label (Should be empty for Grand Total)
+            const colC = row[2]; // Label
             const colD = row[3]; // Total Usaha SBR
             const colE = row[4]; // Total Usaha GC
             const colF = row[5]; // Persentase Usaha GC
 
-            // Check if it matches the Grand Total structural signature
+            // Grand Total signature: No Label in Col C, big numbers in D/E/F
             if (!colC && typeof colD === 'number' && typeof colE === 'number' && typeof colF === 'number') {
                 if (colD > 100000) { // Safety check, total SBR is ~194k nationwide
                     progresNasional = colF.toFixed(2); // Extract precisely rounded percentage
@@ -59,7 +99,8 @@ export async function GET() {
             success: true,
             data: {
                 progresNasional,
-                lastUpdate
+                lastUpdate,
+                monitoringData
             }
         });
 
