@@ -26,21 +26,21 @@ export default function MonitoringPage() {
     React.useEffect(() => {
         const fetchSheetData = async () => {
             try {
-                // Bypass Google Cloud API securely by hitting the CSV Export endpoint natively
-                const res = await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv`);
-                if (!res.ok) throw new Error("Terjadi kesalahan koneksi ke Google Servers.");
+                // Call our Next.js API Route instead of Google directly to bypass CORS
+                const res = await fetch('/api/monitoring-sync', { cache: 'no-store' });
+                if (!res.ok) throw new Error("Terjadi kesalahan koneksi ke API internal.");
 
-                const text = await res.text();
-                const rows = text.split('\n').map(r => r.split(','));
+                const json = await res.json();
 
-                const pRow = rows.find(r => r[0]?.trim().toLowerCase() === 'progres');
-                const uRow = rows.find(r => r[0]?.trim().toLowerCase() === 'update');
-
-                if (pRow && pRow[1]) setProgresNasional(pRow[1].trim());
-                if (uRow && uRow[1]) setLastUpdate(uRow[1].trim());
+                if (json.success && json.data) {
+                    if (json.data.progresNasional) setProgresNasional(json.data.progresNasional);
+                    if (json.data.lastUpdate) setLastUpdate(json.data.lastUpdate);
+                } else {
+                    throw new Error("Format data dari API tidak valid.");
+                }
 
             } catch (err) {
-                console.error("Gagal load Google Sheet", err);
+                console.error("Gagal load Google Sheet via Proxy", err);
                 setIsLoadError(true);
             }
         }
